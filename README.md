@@ -13,7 +13,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 5 | Administración de proyectos e inventario de lotes | ✅ Listo |
 | 6 | Finanzas y cartera: ventas, planes de pago, abonos, morosidad, estados de cuenta | ✅ Listo |
 | 7 | Asistente de IA interno, reportes y analítica | ✅ Listo en código · **requiere `ANTHROPIC_API_KEY`** para el asistente |
-| 8 | Chat interno | ⏳ Pendiente (la sincronización en tiempo real con Socket.IO ya funciona) |
+| 8 | Chat interno, grupos de trabajo y notificaciones | ✅ Listo |
 | 9 | Endurecimiento final y puesta en producción | ⏳ Pendiente |
 
 ## Qué hace hoy
@@ -85,6 +85,14 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 
 **Analítica** (`/admin/analitica`, gerencia y administración): prospectos, citas, ventas, conversión y tiempo de respuesta del periodo; gráficas de los últimos 12 meses (prospectos, conversiones, ventas registradas y cobranza por moneda); embudo; conversión por fuente de captación, por asesor y por desarrollo. Cada gráfica incluye su tabla de datos. El botón "Pedir análisis al asistente" abre el chat con la solicitud del periodo ya escrita.
 
+## Chat del equipo y notificaciones (fase 8)
+
+- **Mensajes directos** entre cualquier usuario activo (una sola conversación por pareja) y **grupos de trabajo** con nombre. Quien crea el grupo lo administra: agrega o quita integrantes y cambia el nombre; cualquiera puede salir, y si sale quien administra, el integrante más antiguo toma su lugar. Los cambios quedan como avisos dentro del grupo.
+- **Tiempo real en todos los dispositivos:** los mensajes aparecen sin recargar; quien no tiene la conversación abierta recibe un aviso emergente y un contador en el menú. Leer en un dispositivo limpia el contador en los demás, y al reconectarse se recupera lo que llegó mientras tanto.
+- **Compartir referencias con permisos:** desde la ficha de un prospecto, lote, proyecto o venta, el botón "Compartir en chat" adjunta la referencia. Solo se puede compartir lo que uno puede ver, y cada lector la ve según **sus** permisos: un asesor que no atiende a ese cliente ve "Prospecto restringido", sin nombre ni enlace.
+- Solo los integrantes leen un canal; ni el administrador ve conversaciones ajenas. El autor puede eliminar su mensaje (queda la marca "Mensaje eliminado"). Límite de 30 mensajes por minuto por persona.
+- **Notificaciones persistentes** (campana en la parte superior): prospecto asignado, prospecto sin asignar, escalamiento, transferencia del asistente de WhatsApp, solicitud de visita y apartado vencido. Se guardan para consultarlas después desde cualquier dispositivo; abrir una la marca como leída y lleva a la ficha correspondiente.
+
 ## Roles (mínimo privilegio)
 
 | Permiso | Admin | Gerencia | Asesor | Finanzas |
@@ -100,6 +108,7 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 | Ver ventas y cartera | ✔ | ✔ | Solo de sus clientes | ✔ |
 | Registrar ventas, pagos y promesas | ✔ | ✘ | ✘ | ✔ |
 | Anular pagos, cancelar ventas | ✔ | ✘ | ✘ | ✘ |
+| Chat del equipo y notificaciones | ✔ | ✔ | ✔ | ✔ |
 | Asistente IA (con su alcance) | ✔ | ✔ | ✔ | ✔ |
 | Analítica | ✔ | ✔ | ✘ | ✘ |
 | Desarrollos, sitio, usuarios, auditoría | ✔ | ✘ | ✘ | ✘ |
@@ -154,7 +163,7 @@ migrations/      esquema SQL versionado
 src/app.js       Express, seguridad y montaje de rutas
 src/server.js    HTTP + Socket.IO (sesión autenticada)
 src/security/    contraseñas, sesiones/CSRF, roles
-src/services/    leads (Round Robin), WhatsApp, asistentes IA, analítica, inventario, finanzas, auditoría, ajustes
+src/services/    leads (Round Robin), WhatsApp, asistentes IA, analítica, inventario, finanzas, chat, notificaciones, auditoría, ajustes
 src/routes/      público, autenticación, webhooks y panel
 src/views/       plantillas HTML con escape automático
 public/          CSS, JS del navegador y assets del diseño

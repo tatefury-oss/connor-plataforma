@@ -8,7 +8,7 @@ import { parseCookies } from './security/cookies.js';
 import { SESSION_COOKIE, sessionFromToken } from './security/session.js';
 import { botConfigured, handleInbound } from './services/bot.js';
 import { releaseExpiredReservations } from './services/inventory.js';
-import { setIo } from './services/realtime.js';
+import { flushNotifications, setIo } from './services/realtime.js';
 import { setInboundHandler } from './services/whatsapp.js';
 import { seed } from './seed.js';
 
@@ -53,7 +53,7 @@ server.listen(config.port, () => {
 function shutdown() {
   clearInterval(cleanup);
   io.close();
-  server.close(() => pool.end().then(() => process.exit(0)));
+  server.close(() => flushNotifications().then(() => pool.end()).then(() => process.exit(0)));
   setTimeout(() => process.exit(1), 10000).unref();
 }
 process.on('SIGTERM', shutdown);

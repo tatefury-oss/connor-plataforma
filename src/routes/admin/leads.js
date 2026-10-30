@@ -181,6 +181,7 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
     <div class="lead-head">
       <div><h2>${lead.name}</h2><p>${stageBadge(lead.stage)} · ${SOURCES[lead.source]} · Alta ${fmtDateTime(lead.created_at)}${lead.escalated_at ? html` · <span class="tag warn">Escalado ${fmtDateTime(lead.escalated_at)}</span>` : ''}</p></div>
       <div class="actions">
+        <a class="btn ghost" href="/admin/chat?ref=lead:${lead.id}">Compartir en chat</a>
         ${lead.phone_normalized ? html`<a class="btn ghost" href="tel:+${lead.phone_normalized}">Llamar</a><a class="btn ghost" href="https://wa.me/${lead.phone_normalized}" target="_blank" rel="noopener">Abrir WhatsApp</a>` : ''}
         ${lead.email ? html`<a class="btn ghost" href="mailto:${lead.email}">Correo</a>` : ''}
       </div>
