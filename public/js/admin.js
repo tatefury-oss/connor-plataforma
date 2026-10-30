@@ -44,6 +44,8 @@
     socket.on('lead:new', lead('Nuevo prospecto'));
     socket.on('lead:unassigned', lead('Prospecto SIN ASIGNAR'));
     socket.on('lead:escalated', lead('Prospecto escalado'));
+    socket.on('lead:handoff', lead('El asistente transfirió a'));
+    socket.on('lead:visit', lead('Solicitud de visita por WhatsApp'));
     socket.on('wa:message', (p) => {
       bump();
       toast(`WhatsApp de ${p.name}: ${String(p.body).slice(0, 80)}`, `/admin/prospectos/${p.leadId}`);

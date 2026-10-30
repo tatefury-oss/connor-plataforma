@@ -32,6 +32,8 @@ export const DEFAULT_SETTINGS = {
   financing_down_payment_text: 'Enganches desde $2,700 MXN, según el desarrollo.',
   financing_max_payments: 'Hasta 90',
   privacy_notice: '',
+  bot_enabled: '1',
+  bot_instructions: '',
 };
 
 const DEVELOPMENTS = [

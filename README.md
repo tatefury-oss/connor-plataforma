@@ -9,7 +9,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 1 | Arquitectura, base de datos, autenticación y roles | ✅ Listo |
 | 2 | Sitio público con el diseño aprobado + administrador de contenidos | ✅ Listo |
 | 3 | CRM Lite: prospectos, embudo, seguimiento, etiquetas, filtros, exportación | ✅ Listo |
-| 4 | WhatsApp Business API + Round Robin | 🟡 Round Robin, webhook y envío listos; **falta configurar Meta** y el bot con IA |
+| 4 | WhatsApp Business API, asistente con IA y Round Robin | ✅ Listo en código · **requiere credenciales de Meta y de Anthropic** para operar |
 | 5 | Inventario de lotes por desarrollo | ⏳ Pendiente (ya existe la ficha del proyecto, coordenadas, superficie y número de lotes) |
 | 6 | Finanzas y cartera (ventas, planes de pago, abonos, morosidad, estados de cuenta) | ⏳ Pendiente (el rol Finanzas ya existe) |
 | 7 | Asistente de IA, reportes y analítica avanzada | ⏳ Pendiente (el tablero ya tiene los indicadores comerciales) |
@@ -34,6 +34,20 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 - **Usuarios**: alta, roles, activación, disponibilidad y restablecimiento de contraseña.
 - **Auditoría**: bitácora de accesos y cambios. La base de datos rechaza cualquier edición o borrado de esta bitácora.
 - **Tiempo real**: avisos al instante de nuevos prospectos, asignaciones, escalamientos y mensajes de WhatsApp, sin recargar la página.
+
+## Asistente virtual de WhatsApp (fase 4)
+
+Cuando un cliente escribe al WhatsApp de la empresa:
+
+1. El mensaje entra al CRM. Si es un número nuevo, se crea el prospecto y se asigna por Round Robin; si ya existía, se reconoce y conserva a su asesor.
+2. El asistente (Claude, modelo `claude-opus-5-5`) responde solo con la **información autorizada**: los desarrollos publicados en el panel y los datos de financiamiento de *Sitio público*. Si un dato no está en el catálogo, dice que un asesor lo confirma.
+3. Mientras conversa, registra en la ficha el nombre, el presupuesto, el desarrollo de interés y las solicitudes de visita, y avisa al asesor en tiempo real.
+4. **Transfiere a un asesor** y deja de responder cuando el cliente pide hablar con una persona, quiere apartar o comprar, pregunta por pagos o contratos, tiene una queja o pregunta algo fuera del catálogo. También se retira si falla el servicio, si el modelo no puede responder o si la conversación pasa de 15 respuestas en una hora.
+5. En cuanto un asesor responde desde el panel, el asistente se retira de esa conversación. Desde la ficha se puede pausar o reactivar por cliente, y desde *Sitio público → Asistente de WhatsApp* se apaga para todos o se le dan indicaciones (promociones vigentes, horarios de visita).
+
+Límites de seguridad: el asistente no puede leer datos de otros clientes, no ve información financiera y no puede borrar, autorizar pagos ni cambiar saldos. Sus únicas herramientas son "registrar datos" y "transferir a asesor". Cada ejecución queda registrada (`bot_runs`) con el resultado y los tokens consumidos.
+
+Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configurado (ver más abajo). Sin ellos el sitio y el CRM funcionan igual y el panel indica que el asistente no está configurado.
 
 ## Roles (mínimo privilegio)
 
@@ -80,11 +94,12 @@ npm test
 
 ## Pendiente de configurar o autorizar (no se simuló)
 
-1. **WhatsApp Business Platform (Meta).** Crear la app en developers.facebook.com, dar de alta el número y apuntar el webhook a `https://TU-DOMINIO/webhooks/whatsapp` con el campo `messages`. Después completar `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN` (token de usuario del sistema) y `WHATSAPP_PHONE_NUMBER_ID`. Mientras falten, el webhook responde 503 y el panel ofrece "Abrir WhatsApp" en lugar de enviar.
-2. **Dominio y HTTPS.** Usar `NODE_ENV=production`, `PUBLIC_URL` y `TRUST_PROXY=1` si hay un proxy delante.
-3. **Datos de la empresa** que el diseño dejó como marcadores: año de fundación, correo, dirección de oficina, zona y precio total de Hacienda Flor de Mayo, precio total de Los Pinos y URL de Facebook. Mientras estén vacíos no se muestran (o aparecen como "Por confirmar"). Se capturan en *Sitio público* y *Desarrollos*.
-4. **Aviso de privacidad.** Hay un texto base. Debe revisarlo un abogado (LFPDPPP) y pegarse en *Sitio público → Legal*.
-5. **Respaldos.** Programar `pg_dump` diario de la base y copia de la carpeta `uploads/` (o migrar a almacenamiento S3/R2).
+1. **Asistente con IA.** Crear una clave en console.anthropic.com y ponerla en `ANTHROPIC_API_KEY`. Cada respuesta del asistente consume tokens de la cuenta de Anthropic; el consumo por conversación queda registrado en `bot_runs`.
+2. **WhatsApp Business Platform (Meta).** Crear la app en developers.facebook.com, dar de alta el número y apuntar el webhook a `https://TU-DOMINIO/webhooks/whatsapp` con el campo `messages`. Después completar `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN` (token de usuario del sistema) y `WHATSAPP_PHONE_NUMBER_ID`. Mientras falten, el webhook responde 503 y el panel ofrece "Abrir WhatsApp" en lugar de enviar.
+3. **Dominio y HTTPS.** Usar `NODE_ENV=production`, `PUBLIC_URL` y `TRUST_PROXY=1` si hay un proxy delante.
+4. **Datos de la empresa** que el diseño dejó como marcadores: año de fundación, correo, dirección de oficina, zona y precio total de Hacienda Flor de Mayo, precio total de Los Pinos y URL de Facebook. Mientras estén vacíos no se muestran (o aparecen como "Por confirmar"). Se capturan en *Sitio público* y *Desarrollos*.
+5. **Aviso de privacidad.** Hay un texto base. Debe revisarlo un abogado (LFPDPPP) y pegarse en *Sitio público → Legal*.
+6. **Respaldos.** Programar `pg_dump` diario de la base y copia de la carpeta `uploads/` (o migrar a almacenamiento S3/R2).
 
 ## Estructura
 
@@ -93,11 +108,11 @@ migrations/      esquema SQL versionado
 src/app.js       Express, seguridad y montaje de rutas
 src/server.js    HTTP + Socket.IO (sesión autenticada)
 src/security/    contraseñas, sesiones/CSRF, roles
-src/services/    leads (Round Robin), WhatsApp, auditoría, ajustes
+src/services/    leads (Round Robin), WhatsApp, asistente IA, auditoría, ajustes
 src/routes/      público, autenticación, webhooks y panel
 src/views/       plantillas HTML con escape automático
 public/          CSS, JS del navegador y assets del diseño
 test/            pruebas de integración (node:test)
 ```
 
-Dependencias: express, pg, helmet, express-rate-limit, socket.io, multer, zod.
+Dependencias: express, pg, helmet, express-rate-limit, socket.io, multer, zod, @anthropic-ai/sdk.

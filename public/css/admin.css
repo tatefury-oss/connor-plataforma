@@ -108,3 +108,4 @@ body.login { display: grid; place-items: center; min-height: 100vh; background: 
   .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px }
   .side nav { flex-direction: row; flex-wrap: wrap } .me { margin: 0; flex-direction: row; flex-wrap: wrap; gap: 12px }
 }
+.bot-status { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: var(--sand); padding: 10px 12px; margin-bottom: 12px; font-size: 14px }

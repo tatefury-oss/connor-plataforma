@@ -16,6 +16,7 @@ export const config = {
   trustProxy: env.TRUST_PROXY === '1',
   sessionHours: Number(env.SESSION_HOURS || 12),
   uploadDir: env.UPLOAD_DIR || new URL('../uploads/', import.meta.url).pathname,
+  anthropicApiKey: env.ANTHROPIC_API_KEY || '',
   whatsapp: {
     verifyToken: env.WHATSAPP_VERIFY_TOKEN || '',
     appSecret: env.WHATSAPP_APP_SECRET || '',
