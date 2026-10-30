@@ -12,10 +12,13 @@ export const config = {
   isProd: env.NODE_ENV === 'production',
   port: Number(env.PORT || 3000),
   databaseUrl: required('DATABASE_URL'),
-  publicUrl: env.PUBLIC_URL || `http://localhost:${env.PORT || 3000}`,
+  // Render define RENDER_EXTERNAL_URL (https://<servicio>.onrender.com) automáticamente.
+  publicUrl: env.PUBLIC_URL || env.RENDER_EXTERNAL_URL || `http://localhost:${env.PORT || 3000}`,
   trustProxy: env.TRUST_PROXY === '1',
   sessionHours: Number(env.SESSION_HOURS || 12),
   databaseSsl: env.DATABASE_SSL === '1',
+  // La base está en la red privada del proveedor (p. ej. URL interna de Render): no viaja por internet.
+  databasePrivateNetwork: env.DATABASE_PRIVATE_NETWORK === '1',
   dbPoolSize: Number(env.DB_POOL_SIZE || 10),
   // En producción las migraciones se aplican a mano (npm run migrate) después de un respaldo.
   autoMigrate: env.AUTO_MIGRATE ? env.AUTO_MIGRATE === '1' : env.NODE_ENV !== 'production',
@@ -40,7 +43,10 @@ export function productionProblems() {
   if (!config.isProd) return [];
   const p = [];
   if (!/^https:\/\//.test(config.publicUrl)) p.push('PUBLIC_URL debe usar https:// en producción.');
-  if (/localhost|127\.0\.0\.1/.test(config.databaseUrl) === false && !config.databaseSsl) p.push('Base de datos remota sin DATABASE_SSL=1.');
+  const local = /localhost|127\.0\.0\.1/.test(config.databaseUrl);
+  if (!local && !config.databaseSsl && !config.databasePrivateNetwork) {
+    p.push('Base de datos remota sin DATABASE_SSL=1 (o DATABASE_PRIVATE_NETWORK=1 si va por red privada del proveedor).');
+  }
   return p;
 }
 
