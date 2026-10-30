@@ -1,0 +1,80 @@
+import express from 'express';
+import helmet from 'helmet';
+import { config } from './config.js';
+import { cookieMiddleware } from './security/cookies.js';
+import { requireAuth } from './security/rbac.js';
+import { loadUser, requireCsrf } from './security/session.js';
+import auditRoutes from './routes/admin/audit.js';
+import dashboardRoutes from './routes/admin/dashboard.js';
+import developmentRoutes, { mountDevelopmentUploads } from './routes/admin/developments.js';
+import leadRoutes from './routes/admin/leads.js';
+import settingsRoutes from './routes/admin/settings.js';
+import userRoutes from './routes/admin/users.js';
+import authRoutes from './routes/auth.js';
+import publicRoutes, { notFound } from './routes/public.js';
+import webhookRoutes from './routes/webhooks.js';
+
+export function createApp() {
+  const app = express();
+  app.disable('x-powered-by');
+  if (config.trustProxy) app.set('trust proxy', 1);
+
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:'],
+        mediaSrc: ["'self'"],
+        frameSrc: ['https://www.openstreetmap.org', 'https://www.youtube-nocookie.com'],
+        connectSrc: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        upgradeInsecureRequests: config.isProd ? [] : null,
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    strictTransportSecurity: config.isProd,
+  }));
+
+  // El webhook necesita el cuerpo crudo para validar la firma: va antes de los parsers.
+  app.use(webhookRoutes);
+
+  app.get('/healthz', (_req, res) => res.json({ ok: true }));
+  app.use(express.static(new URL('../public/', import.meta.url).pathname, { index: false, maxAge: config.isProd ? '7d' : 0 }));
+  app.use('/uploads', express.static(config.uploadDir, { index: false, maxAge: '30d', dotfiles: 'deny' }));
+
+  app.use(cookieMiddleware);
+  app.use(express.urlencoded({ extended: false, limit: '200kb', parameterLimit: 200 }));
+
+  app.use(publicRoutes);
+
+  // ---------- Entorno privado ----------
+  app.use('/admin', loadUser, (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+  app.use(authRoutes);
+  app.use('/admin', requireAuth);
+  mountDevelopmentUploads(app, requireCsrf); // multipart: el token CSRF se lee tras procesar el formulario
+  app.use('/admin', requireCsrf);
+  app.use(dashboardRoutes);
+  app.use(leadRoutes);
+  app.use(developmentRoutes);
+  app.use(settingsRoutes);
+  app.use(userRoutes);
+  app.use(auditRoutes);
+
+  app.use(notFound);
+
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, _next) => {
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).send('El archivo es demasiado grande (máx. 60 MB).');
+    if (err.type === 'entity.too.large') return res.status(413).send('La solicitud es demasiado grande.');
+    console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, err);
+    res.status(500).send('Ocurrió un error inesperado. El equipo técnico fue notificado.');
+  });
+
+  return app;
+}

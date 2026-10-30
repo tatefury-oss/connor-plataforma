@@ -1,0 +1,30 @@
+body { margin: 0 }
+html { scroll-behavior: smooth }
+a { color: #1747B8 }
+a:hover { color: #0F1626 }
+img { background: #1B2540; color: transparent }
+:focus-visible { outline: 3px solid #6E9BFF; outline-offset: 2px }
+
+.lead-form .field { display: flex; flex-direction: column; gap: 8px; min-width: 0 }
+.lead-form input:not([type=radio]):not([type=checkbox]), .lead-form select, .lead-form textarea {
+  font: 500 16px/1.4 Manrope, sans-serif; color: #0F1626; background: #FFFFFF;
+  border: 1px solid #D9D1C3; border-radius: 0; padding: 14px 16px; width: 100%; box-sizing: border-box;
+}
+.lead-form textarea { resize: vertical }
+.lead-form input:focus, .lead-form select:focus, .lead-form textarea:focus { border-color: #1F5FE0; outline: none; box-shadow: 0 0 0 3px rgba(31,95,224,.18) }
+.lead-form .radio, .lead-form .check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.5; cursor: pointer }
+.lead-form input[type=radio], .lead-form input[type=checkbox] { width: 18px; height: 18px; margin: 2px 0 0; accent-color: #1F5FE0; flex: none }
+.lead-form .field-error { color: #B42318; font-size: 14px; grid-column: 1 / -1 }
+.lead-form .form-alert { background: #FEF3F2; color: #B42318; padding: 12px 16px; font-size: 15px }
+.lead-form button[disabled] { opacity: .6; cursor: progress }
+.lead-form .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden }
+.lead-form:has(input[name=intent][value=info]:checked) .visit-date { display: none }
+
+.wa-float {
+  position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 58px; height: 58px; border-radius: 50%;
+  background: #25D366; color: #FFFFFF; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(15,22,38,.28);
+}
+.wa-float:hover { color: #FFFFFF; transform: translateY(-2px) }
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } }
