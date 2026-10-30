@@ -117,6 +117,8 @@ El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor 
 
 ## Producción
 
+- **Publicar en Render (recomendado para empezar):** [`docs/RENDER.md`](docs/RENDER.md). El archivo `render.yaml` crea el servidor, la base de datos y el disco, y publica solo cada cambio que se une a `main`.
+
 - **Guía de operación:** [`docs/OPERACION.md`](docs/OPERACION.md) cubre instalación con Docker y Nginx, actualizaciones (respaldo → migración → verificación), respaldos diarios, simulacro de restauración, monitoreo e incidentes.
 - **Seguridad:** [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) relaciona cada control de la sección 12 con su verificación y lista los riesgos residuales.
 - **Pruebas y resultados:** [`docs/PRUEBAS.md`](docs/PRUEBAS.md) incluye 87 pruebas automatizadas, mediciones de rendimiento y pruebas de punta a punta.

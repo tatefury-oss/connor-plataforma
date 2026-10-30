@@ -1,0 +1,57 @@
+# Blueprint de Render para la plataforma CONNOR.
+# En render.com: New → Blueprint → elegir este repositorio. Render crea el servidor, la base y el disco.
+# Guía paso a paso: docs/RENDER.md
+services:
+  - type: web
+    name: connor-plataforma
+    runtime: node
+    plan: starter            # plan de pago: necesario para el disco y para preDeployCommand
+    region: oregon           # la región más cercana a Baja California
+    branch: main
+    autoDeploy: true         # cada cambio unido a main se publica solo
+    buildCommand: npm ci --omit=dev
+    # Antes de cada despliegue: migraciones y datos iniciales (idempotentes). Si fallan, no se publica.
+    preDeployCommand: node src/migrate.js && node src/seed.js
+    startCommand: node src/server.js
+    healthCheckPath: /readyz
+    disk:
+      name: connor-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: TRUST_PROXY
+        value: "1"
+      - key: AUTO_MIGRATE
+        value: "0"
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: DATABASE_URL
+        fromDatabase:
+          name: connor-db
+          property: connectionString
+      # La URL de base de datos es la interna de Render (red privada, no sale a internet).
+      - key: DATABASE_PRIVATE_NETWORK
+        value: "1"
+      # Se piden al crear el blueprint; pueden dejarse vacías y llenarse después.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+
+databases:
+  - name: connor-db
+    plan: basic-256mb
+    databaseName: connor
+    user: connor
+    region: oregon
+    postgresMajorVersion: "16"

@@ -182,3 +182,15 @@ describe('integridad del calendario', () => {
     assert.equal(bad.n, 0);
   });
 });
+
+describe('configuración de producción', () => {
+  test('exige HTTPS y conexión segura o privada a la base', async () => {
+    const { config, productionProblems } = await import('../src/config.js');
+    const saved = { ...config };
+    Object.assign(config, { isProd: true, publicUrl: 'http://connor.mx', databaseUrl: 'postgres://u:p@dpg-abc/connor', databaseSsl: false, databasePrivateNetwork: false });
+    assert.equal(productionProblems().length, 2);
+    Object.assign(config, { publicUrl: 'https://connor-plataforma.onrender.com', databasePrivateNetwork: true });
+    assert.deepEqual(productionProblems(), []);
+    Object.assign(config, saved);
+  });
+});
