@@ -32,8 +32,8 @@ async function managementDashboard(req) {
   const adv = Number(req.query.asesor) || null;
   // Filtros comunes del tablero ($1 desde, $2 hasta, $3 desarrollo, $4 asesor).
   const p = [from, to, dev, adv];
-  const W = `($1::date IS NULL OR l.created_at >= ($1::date AT TIME ZONE 'America/Tijuana'))
-         AND ($2::date IS NULL OR l.created_at < (($2::date + 1) AT TIME ZONE 'America/Tijuana'))
+  const W = `($1::date IS NULL OR l.created_at >= ($1::date::timestamp AT TIME ZONE 'America/Tijuana'))
+         AND ($2::date IS NULL OR l.created_at < (($2::date + 1)::timestamp AT TIME ZONE 'America/Tijuana'))
          AND ($3::bigint IS NULL OR l.development_id = $3)
          AND ($4::bigint IS NULL OR l.assigned_to = $4)`;
 

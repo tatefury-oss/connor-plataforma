@@ -206,3 +206,15 @@ describe('webhook de WhatsApp', () => {
     assert.equal(n, 1);
   });
 });
+
+describe('filtros por fecha', () => {
+  test('un prospecto de la noche (hora de Tijuana) cuenta en su día local', async () => {
+    const { commercialSummary } = await import('../src/services/analytics.js');
+    // 23:30 del 15 de marzo en Tijuana = 06:30 UTC del 16 de marzo.
+    await query(`INSERT INTO leads (name, source, created_at) VALUES ('Nocturno', 'web', '2026-03-16T06:30:00Z')`);
+    const day = await commercialSummary({ id: ctx.users.admin, role: 'admin' }, '2026-03-15', '2026-03-15');
+    assert.equal(day.totales.prospectos, 1);
+    const next = await commercialSummary({ id: ctx.users.admin, role: 'admin' }, '2026-03-16', '2026-03-16');
+    assert.equal(next.totales.prospectos, 0);
+  });
+});

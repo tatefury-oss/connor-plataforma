@@ -7,6 +7,7 @@ import { loadUser, requireCsrf } from './security/session.js';
 import auditRoutes from './routes/admin/audit.js';
 import dashboardRoutes from './routes/admin/dashboard.js';
 import developmentRoutes, { mountDevelopmentUploads } from './routes/admin/developments.js';
+import assistantRoutes from './routes/admin/assistant.js';
 import financeRoutes from './routes/admin/finance.js';
 import leadRoutes from './routes/admin/leads.js';
 import projectRoutes, { mountProjectUploads } from './routes/admin/projects.js';
@@ -66,6 +67,7 @@ export function createApp() {
   app.use(leadRoutes);
   app.use(projectRoutes);
   app.use(financeRoutes);
+  app.use(assistantRoutes);
   app.use(developmentRoutes);
   app.use(settingsRoutes);
   app.use(userRoutes);
