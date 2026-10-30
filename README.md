@@ -14,7 +14,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 6 | Finanzas y cartera: ventas, planes de pago, abonos, morosidad, estados de cuenta | ✅ Listo |
 | 7 | Asistente de IA interno, reportes y analítica | ✅ Listo en código · **requiere `ANTHROPIC_API_KEY`** para el asistente |
 | 8 | Chat interno, grupos de trabajo y notificaciones | ✅ Listo |
-| 9 | Endurecimiento final y puesta en producción | ⏳ Pendiente |
+| 9 | Pruebas integrales, seguridad, optimización y preparación para producción | ✅ Listo · falta desplegar en el servidor final |
 
 ## Qué hace hoy
 
@@ -115,6 +115,13 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 
 El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor intenta abrir un prospecto ajeno, recibe un 404.
 
+## Producción
+
+- **Guía de operación:** [`docs/OPERACION.md`](docs/OPERACION.md) cubre instalación con Docker y Nginx, actualizaciones (respaldo → migración → verificación), respaldos diarios, simulacro de restauración, monitoreo e incidentes.
+- **Seguridad:** [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) relaciona cada control de la sección 12 con su verificación y lista los riesgos residuales.
+- **Pruebas y resultados:** [`docs/PRUEBAS.md`](docs/PRUEBAS.md) incluye 87 pruebas automatizadas, mediciones de rendimiento y pruebas de punta a punta.
+- `npm run smoke` verifica un servidor en marcha después de cada despliegue; `npm run backup` genera un respaldo.
+
 ## Seguridad implementada
 
 - Contraseñas con **scrypt** (mínimo 12 caracteres). Bloqueo de 15 minutos tras 5 intentos fallidos, más límite de intentos por IP.
@@ -126,6 +133,10 @@ El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor 
 - El webhook de Meta se valida con la firma HMAC `X-Hub-Signature-256`.
 - Secretos y tokens solo en variables de entorno del servidor. Nunca llegan al navegador.
 - Cabeceras de seguridad con Helmet. El panel usa `noindex` y `Cache-Control: no-store`.
+- La sesión se renueva al iniciar sesión. Cada usuario puede cambiar su contraseña (se cierran sus otros dispositivos) y cerrar sesión en los demás dispositivos desde *Mi cuenta*.
+- Socket.IO solo acepta conexiones del propio dominio.
+- En producción la aplicación usa un usuario de base de datos que no puede borrar la bitácora, los pagos ni las ventas (`deploy/db-roles.sql`), y no arranca sin HTTPS ni con migraciones pendientes.
+- Derechos ARCO (acceso y cancelación de datos personales) y retención automática de datos operativos.
 
 ## Instalación
 

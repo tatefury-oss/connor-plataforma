@@ -6,7 +6,13 @@ pg.types.setTypeParser(20, Number);
 // Las columnas DATE se manejan como texto 'AAAA-MM-DD' para que no se desplacen por zona horaria.
 pg.types.setTypeParser(1082, (v) => v);
 
-export const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 10 });
+export const pool = new pg.Pool({
+  connectionString: config.databaseUrl,
+  max: config.dbPoolSize,
+  ssl: config.databaseSsl ? { rejectUnauthorized: true } : undefined,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+});
 
 export const query = (text, params) => pool.query(text, params);
 

@@ -39,6 +39,12 @@ export async function destroySession(req, res) {
   res.clearCookie(SESSION_COOKIE, { path: '/' });
 }
 
+// Cierra las demás sesiones del usuario (otros dispositivos) y conserva la actual.
+export async function destroyOtherSessions(req) {
+  const raw = req.cookies?.[SESSION_COOKIE];
+  await query('DELETE FROM sessions WHERE user_id = $1 AND id <> $2', [req.user.id, raw ? sha256(raw) : '']);
+}
+
 export async function destroyUserSessions(userId) {
   await query('DELETE FROM sessions WHERE user_id = $1', [userId]);
 }

@@ -155,9 +155,11 @@ export async function createSale(user, input, req) {
           input.agreedPrice, input.downPayment || 0, Number(input.installments), input.annualRate || 0,
           Number(input.installments) > 0 ? input.firstDueDate : null, String(input.notes ?? '').slice(0, 2000), user.id],
       );
+      let before = 0; // acumulado en centavos de las parcialidades anteriores
       for (const row of schedule) {
-        await db.query('INSERT INTO installments (sale_id, number, due_date, amount, principal, interest) VALUES ($1, $2, $3, $4, $5, $6)',
-          [sale.id, row.number, row.due_date, row.amount, row.principal, row.interest]);
+        await db.query('INSERT INTO installments (sale_id, number, due_date, amount, principal, interest, before_amount) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [sale.id, row.number, row.due_date, row.amount, row.principal, row.interest, (before / 100).toFixed(2)]);
+        before += Math.round(Number(row.amount) * 100);
       }
       // Formalizar la venta marca el lote como vendido.
       if (lot.status === 'apartado') {

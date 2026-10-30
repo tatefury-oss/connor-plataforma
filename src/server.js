@@ -1,25 +1,47 @@
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { createApp } from './app.js';
-import { config, whatsappReceiveEnabled, whatsappSendEnabled } from './config.js';
-import { pool, query } from './db.js';
-import { migrate } from './migrate.js';
+import { config, productionProblems, whatsappReceiveEnabled, whatsappSendEnabled } from './config.js';
+import { pool } from './db.js';
+import { migrate, pendingMigrations } from './migrate.js';
 import { parseCookies } from './security/cookies.js';
+import { originAllowed } from './security/origin.js';
 import { SESSION_COOKIE, sessionFromToken } from './security/session.js';
 import { botConfigured, handleInbound } from './services/bot.js';
 import { releaseExpiredReservations } from './services/inventory.js';
+import { applyRetention } from './services/privacy.js';
 import { flushNotifications, setIo } from './services/realtime.js';
 import { setInboundHandler } from './services/whatsapp.js';
 import { seed } from './seed.js';
 
-await migrate();
-await seed({ log: () => {} });
+const problems = productionProblems();
+if (problems.length) {
+  console.error(`Configuración insegura para producción:\n- ${problems.join('\n- ')}`);
+  process.exit(1);
+}
+
+if (config.autoMigrate) {
+  await migrate();
+  await seed({ log: () => {} });
+} else {
+  // En producción no se modifica la base al arrancar: primero respaldo y luego `npm run migrate`.
+  const pending = await pendingMigrations();
+  if (pending.length) {
+    console.error(`Hay migraciones pendientes (${pending.join(', ')}). Respalda la base y ejecuta: npm run migrate`);
+    process.exit(1);
+  }
+}
 
 const app = createApp();
 const server = createServer(app);
 
 // Sincronización en tiempo real: cada socket se autentica con la cookie de sesión del panel.
-const io = new Server(server, { serveClient: true, cors: { origin: false } });
+// Solo se aceptan conexiones desde el propio sitio (evita secuestro de WebSocket entre sitios).
+const io = new Server(server, {
+  serveClient: true,
+  cors: { origin: false },
+  allowRequest: (req, callback) => callback(null, originAllowed(req.headers.origin, req.headers.host)),
+});
 io.use(async (socket, next) => {
   try {
     const raw = parseCookies(socket.request.headers.cookie)[SESSION_COOKIE];
@@ -39,8 +61,8 @@ setIo(io);
 setInboundHandler(handleInbound);
 
 const cleanup = setInterval(() => {
-  query('DELETE FROM sessions WHERE expires_at < now()').catch(() => {});
   releaseExpiredReservations().catch((err) => console.error('[inventario] error al liberar apartados', err));
+  applyRetention().catch((err) => console.error('[retención]', err));
 }, 60 * 60 * 1000);
 
 server.listen(config.port, () => {

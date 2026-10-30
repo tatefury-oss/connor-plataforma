@@ -50,7 +50,7 @@ export function adminPage({ req, title, body, active }) {
       ${NAV.filter(([, , ok]) => ok(u)).map(([href, label]) => html`<a href="${href}" class="${active === href ? 'on' : ''}">${label}${href === '/admin/chat' ? html` <b class="count" id="badge-chat" ${req.badges?.chat ? '' : 'hidden'}>${req.badges?.chat ?? 0}</b>` : ''}</a>`)}
     </nav>
     <div class="me">
-      <strong>${u.name}</strong>
+      <a href="/admin/cuenta" class="me-link"><strong>${u.name}</strong></a>
       <span>${ROLES[u.role]}</span>
       ${u.role === 'asesor' ? html`<form method="post" action="/admin/disponibilidad">${csrfField(req)}<button class="link" type="submit">${u.available ? '● Disponible para recibir prospectos' : '○ No disponible'}</button></form>` : ''}
       <form method="post" action="/admin/logout">${csrfField(req)}<button class="link" type="submit">Cerrar sesión</button></form>
