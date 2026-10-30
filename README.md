@@ -11,7 +11,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 3 | CRM Lite: prospectos, embudo, seguimiento, etiquetas, filtros, exportación | ✅ Listo |
 | 4 | WhatsApp Business API, asistente con IA y Round Robin | ✅ Listo en código · **requiere credenciales de Meta y de Anthropic** para operar |
 | 5 | Administración de proyectos e inventario de lotes | ✅ Listo |
-| 6 | Finanzas y cartera (ventas, planes de pago, abonos, morosidad, estados de cuenta) | ⏳ Pendiente (el rol Finanzas ya existe) |
+| 6 | Finanzas y cartera: ventas, planes de pago, abonos, morosidad, estados de cuenta | ✅ Listo |
 | 7 | Asistente de IA, reportes y analítica avanzada | ⏳ Pendiente (el tablero ya tiene los indicadores comerciales) |
 | 8 | Chat interno | ⏳ Pendiente (la sincronización en tiempo real con Socket.IO ya funciona) |
 | 9 | Endurecimiento final y puesta en producción | ⏳ Pendiente |
@@ -62,11 +62,23 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 - **Sitio público:** la ficha de cada desarrollo con inventario muestra la tabla de lotes disponibles (sin datos de clientes). El asistente de WhatsApp conoce cuántos lotes hay disponibles.
 - **Avances y actividades** con responsable y fecha compromiso, y **documentación privada** (planos, permisos, escrituras en PDF/JPG/PNG). Los documentos se guardan fuera de la carpeta pública, solo los descargan administración y gerencia, y cada descarga queda auditada.
 
+## Finanzas y cartera (fase 6)
+
+- **Registro de venta** a partir de un lote apartado o vendido: precio pactado, enganche, número de mensualidades, fecha de la primera y tasa de interés anual (0 % por defecto). El calendario se calcula y se muestra para revisión antes de guardarlo; una vez guardado no se modifica. Con interés se usa pago fijo (amortización francesa). Los importes se calculan en centavos y la última parcialidad absorbe el redondeo, así el total siempre cuadra.
+- Al registrar la venta el lote pasa a "Vendido" y el cliente a la etapa "Venta". Un lote solo puede tener una venta vigente.
+- **Pagos (abonos):** monto, fecha (no futura), forma de pago, concepto y referencia bancaria. Se aplican a las parcialidades más antiguas primero (enganche incluido); el excedente abona a la siguiente. Cuando el saldo llega a cero la venta queda "Liquidada".
+- **Trazabilidad:** la base de datos impide borrar o editar un pago confirmado. Una corrección se hace anulando el pago (solo el administrador, con motivo obligatorio) y registrando el correcto. El pago anulado sigue visible tachado, con quién lo anuló y por qué, y queda en la auditoría. Las ventas y los calendarios tampoco se pueden borrar.
+- **Saldos siempre consistentes:** el saldo, lo vencido y los días de atraso no se guardan; se calculan en cada consulta a partir del calendario y los pagos confirmados.
+- **Tablero de cartera** separado por moneda (MXN y USD): cuentas por cobrar, cartera vencida, clientes morosos (2 o más parcialidades vencidas o más de 30 días de atraso), cobrado en el mes, cobranza esperada a 30/60/90 días e ingresos de los últimos 12 meses.
+- **Alertas:** próximos vencimientos (7 días), pagos vencidos, morosos y promesas de pago incumplidas. Una promesa se marca cumplida si entre su registro y la fecha prometida se pagó al menos el monto acordado.
+- **Estado de cuenta** imprimible (o guardar como PDF desde el navegador) y en CSV. **Reportes** de ingresos por periodo y de antigüedad de cartera (1-30, 31-60, 61-90 y más de 90 días), en CSV para Excel. Cada descarga queda en la auditoría.
+- **Cancelar venta:** solo el administrador, con motivo. El lote vuelve a estar disponible y los pagos se conservan en el historial; la devolución al cliente se gestiona por separado.
+
 ## Roles (mínimo privilegio)
 
 | Permiso | Admin | Gerencia | Asesor | Finanzas |
 |---|---|---|---|---|
-| Tablero | ✔ | ✔ | Solo lo suyo | Aviso de fase 6 |
+| Tablero | ✔ | ✔ | Solo lo suyo | Tablero de cartera |
 | Ver prospectos | Todos | Todos | **Solo los asignados** | ✘ |
 | Reasignar / exportar | ✔ | ✔ | ✘ (puede escalar) | ✘ |
 | Ver inventario | ✔ | ✔ | ✔ (sin datos de clientes ajenos) | ✘ |
@@ -74,6 +86,9 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 | Vender / liberar cualquier apartado | ✔ | ✔ | ✘ | ✘ |
 | Cargar lotes, bloquear, cancelar ventas | ✔ | ✘ | ✘ | ✘ |
 | Actividades y documentos de proyecto | ✔ | ✔ | ✘ | ✘ |
+| Ver ventas y cartera | ✔ | ✔ | Solo de sus clientes | ✔ |
+| Registrar ventas, pagos y promesas | ✔ | ✘ | ✘ | ✔ |
+| Anular pagos, cancelar ventas | ✔ | ✘ | ✘ | ✘ |
 | Desarrollos, sitio, usuarios, auditoría | ✔ | ✘ | ✘ | ✘ |
 
 El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor intenta abrir un prospecto ajeno, recibe un 404.
@@ -126,7 +141,7 @@ migrations/      esquema SQL versionado
 src/app.js       Express, seguridad y montaje de rutas
 src/server.js    HTTP + Socket.IO (sesión autenticada)
 src/security/    contraseñas, sesiones/CSRF, roles
-src/services/    leads (Round Robin), WhatsApp, asistente IA, auditoría, ajustes
+src/services/    leads (Round Robin), WhatsApp, asistente IA, inventario, finanzas, auditoría, ajustes
 src/routes/      público, autenticación, webhooks y panel
 src/views/       plantillas HTML con escape automático
 public/          CSS, JS del navegador y assets del diseño

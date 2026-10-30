@@ -2,13 +2,14 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { whatsappSendEnabled } from '../../config.js';
 import { many } from '../../db.js';
-import { can, canSeeLeads, requirePermission } from '../../security/rbac.js';
+import { can, canSeeFinance, canSeeLeads, requirePermission } from '../../security/rbac.js';
 import { audit } from '../../services/audit.js';
 import {
   ACTIVITY_TYPES, SOURCES, STAGES, activeAdvisors, activitiesFor, addActivity, assignmentsFor, captureLead,
   escalateLead, getLead, listLeads, normalizePhone, reassignLead, updateLead,
 } from '../../services/leads.js';
 import { botConfigured, botRunsFor, setBotPaused } from '../../services/bot.js';
+import { SALE_STATUS, salesForLead } from '../../services/finance.js';
 import { LOT_STATUS, lotsForLead, money } from '../../services/inventory.js';
 import { messagesFor, sendText } from '../../services/whatsapp.js';
 import { fmtDate, fmtDateTime, fromLocalInput, html, toLocalInput } from '../../views/html.js';
@@ -163,7 +164,7 @@ router.post('/admin/prospectos', requirePermission('leads.create'), async (req, 
 router.get('/admin/prospectos/:id', async (req, res, next) => {
   const lead = await getLead(req.user, req.params.id);
   if (!lead) return next();
-  const [activities, assignments, devs, advisors, wa, botRuns, leadLots, freeLots] = await Promise.all([
+  const [activities, assignments, devs, advisors, wa, botRuns, leadLots, freeLots, sales] = await Promise.all([
     activitiesFor(lead.id), assignmentsFor(lead.id),
     many('SELECT id, name FROM developments ORDER BY sort_order, number'),
     can(req.user, 'leads.reassign') ? activeAdvisors() : [],
@@ -173,6 +174,7 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
     lead.development_id && can(req.user, 'inventory.reserve')
       ? many(`SELECT id, code, area_m2, price, currency FROM lots WHERE development_id = $1 AND status = 'disponible' ORDER BY block, length(number), number, code LIMIT 500`, [lead.development_id])
       : [],
+    canSeeFinance(req.user) ? salesForLead(lead.id) : [],
   ]);
   const country = lead.phone_normalized?.startsWith('1') ? '1' : '52';
   const body = html`
@@ -244,6 +246,9 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
         <select name="lot_id" required><option value="">Apartar lote disponible de ${lead.development_name}…</option>${freeLots.map((l) => html`<option value="${l.id}">${l.code} · ${l.area_m2 ?? '—'} m² · ${money(l.price, l.currency)}</option>`)}</select>
         <input type="date" name="reserved_until" title="Vencimiento del apartado"><button class="btn small" type="submit">Apartar</button></form>`
         : lead.development_id ? '' : html`<p class="muted">Asigna un desarrollo al prospecto para apartar un lote.</p>`}
+      ${sales.length ? html`<h2>Ventas y cartera</h2><table><thead><tr><th>Venta</th><th>Lote</th><th class="num">Saldo</th><th class="num">Vencido</th><th>Estado</th></tr></thead><tbody>
+        ${sales.map((s) => html`<tr class="${Number(s.overdue_amount) > 0 && s.status === 'activa' ? 'late' : ''}"><td><a href="/admin/finanzas/ventas/${s.id}">#${s.id}</a></td><td>${s.lot_code}</td><td class="num">${money(Math.max(0, Number(s.balance)), s.currency)}</td><td class="num">${Number(s.overdue_amount) > 0 ? money(s.overdue_amount, s.currency) : '—'}</td><td>${SALE_STATUS[s.status]}</td></tr>`)}
+      </tbody></table>` : ''}
     </section>
 
     <section class="card">

@@ -118,3 +118,4 @@ a.kpi { text-decoration: none; color: inherit } a.kpi:hover { border-color: var(
 .docs { margin: 12px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px }
 .bot-status { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: var(--sand); padding: 10px 12px; margin-bottom: 12px; font-size: 14px }
 .nowrap { white-space: nowrap }
+.section-title { font: 800 14px Montserrat, sans-serif; color: var(--ink); margin: 4px 0 10px } tr.voided td { color: #98A2B3; text-decoration: line-through } tr.voided td:last-child { text-decoration: none }

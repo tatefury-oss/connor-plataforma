@@ -1,4 +1,4 @@
-import { can, canSeeLeads, ROLES } from '../../security/rbac.js';
+import { can, canSeeFinance, canSeeLeads, ROLES } from '../../security/rbac.js';
 import { html } from '../html.js';
 
 const NAV = [
@@ -6,6 +6,7 @@ const NAV = [
   ['/admin/prospectos', 'Prospectos', canSeeLeads],
   ['/admin/embudo', 'Embudo', canSeeLeads],
   ['/admin/proyectos', 'Proyectos e inventario', (u) => can(u, 'inventory.view')],
+  ['/admin/finanzas', 'Finanzas y cartera', canSeeFinance],
   ['/admin/desarrollos', 'Desarrollos', (u) => can(u, 'developments.manage')],
   ['/admin/configuracion', 'Sitio público', (u) => can(u, 'settings.manage')],
   ['/admin/usuarios', 'Usuarios', (u) => can(u, 'users.manage')],

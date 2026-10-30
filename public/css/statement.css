@@ -1,0 +1,16 @@
+* { box-sizing: border-box }
+body { margin: 0; background: #E9E5DE; font: 13px/1.45 Manrope, sans-serif; color: #2B3347 }
+.sheet { max-width: 900px; margin: 24px auto; background: #FFFFFF; padding: 40px 44px; position: relative }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 3px solid #0F1626; padding-bottom: 16px; margin-bottom: 20px }
+.brand { display: flex; gap: 10px; align-items: center } .brand b { display: block; font: 800 22px Montserrat, sans-serif; color: #0F1626 } .brand b span { color: #1F5FE0 }
+.brand small { font: 600 9px Montserrat, sans-serif; letter-spacing: .2em; color: #5D6678 }
+.meta { text-align: right } .meta h1 { margin: 0; font: 800 20px Montserrat, sans-serif; color: #0F1626 } .meta p { margin: 4px 0 0; color: #5D6678 }
+h2 { font: 700 11px Montserrat, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #1747B8; margin: 22px 0 8px }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px } .cols h2 { margin-top: 0 } .cols p { margin: 0 }
+table { width: 100%; border-collapse: collapse } th { text-align: left; background: #0F1626; color: #FFFFFF; font: 700 10px Montserrat, sans-serif; letter-spacing: .08em; padding: 7px 8px }
+td { padding: 6px 8px; border-bottom: 1px solid #EFEAE2 } td:nth-child(n+3) { text-align: right } .cols td:last-child { text-align: right }
+table.sum td { padding: 3px 0; border: 0 } .warn { background: #FEF3F2; color: #B42318; padding: 8px 12px; font-weight: 700 }
+footer { margin-top: 28px; border-top: 1px solid #E2DBCF; padding-top: 12px; color: #5D6678; font-size: 11px } footer p { margin: 2px 0 }
+.print { position: fixed; top: 16px; right: 16px; z-index: 5; box-shadow: 0 6px 18px rgba(15,22,38,.25); background: #1F5FE0; color: #FFFFFF; border: 0; padding: 10px 16px; font: 700 13px Montserrat, sans-serif; cursor: pointer }
+@media (max-width: 700px) { .sheet { padding: 24px 16px } .cols { grid-template-columns: 1fr } header { flex-direction: column } .meta { text-align: left } }
+@media print { body { background: #FFFFFF } .sheet { margin: 0; padding: 0; max-width: none } .print { display: none } @page { margin: 14mm } }
