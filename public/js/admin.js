@@ -35,8 +35,37 @@
     }, 1500);
   }
 
+  const me = Number(document.querySelector('meta[name=user-id]')?.content);
+  const setBadge = (id, n) => { const b = document.getElementById(id); if (b) { b.textContent = n; b.hidden = !n; } };
+  const addBadge = (id) => { const b = document.getElementById(id); if (b) setBadge(id, Number(b.textContent || 0) + 1); };
+  async function refreshCounters() {
+    try {
+      const r = await fetch('/admin/chat/contadores', { headers: { Accept: 'application/json' } });
+      if (r.ok) { const c = await r.json(); setBadge('badge-chat', c.chat); setBadge('badge-notif', c.notifications); }
+    } catch { /* sin conexión: se actualizará en la siguiente página */ }
+  }
+
   if (window.io) {
     const socket = window.io({ transports: ['websocket', 'polling'] });
+    window.connorSocket = socket;
+    socket.on('connect', refreshCounters);
+    socket.on('notification:new', () => addBadge('badge-notif'));
+    socket.on('notification:read', refreshCounters);
+    socket.on('chat:read', refreshCounters);
+    socket.on('chat:message', (p) => {
+      if (p.fromId === me) return;
+      const thread = document.getElementById('cthread');
+      if (thread && Number(thread.dataset.channel) === p.channelId && !document.hidden) return; // lo maneja chat.js
+      addBadge('badge-chat');
+      bump();
+      toast(`${p.from}: ${p.preview}`, `/admin/chat/${p.channelId}`);
+      const item = document.querySelector(`#channel-list [data-channel="${p.channelId}"] a`);
+      if (item) {
+        let c = item.querySelector('.count');
+        if (!c) { c = document.createElement('b'); c.className = 'count'; c.textContent = '0'; item.append(c); }
+        c.textContent = Number(c.textContent) + 1;
+      }
+    });
     socket.on('connect', () => live?.classList.add('on'));
     socket.on('disconnect', () => live?.classList.remove('on'));
     const lead = (msg) => (p) => { bump(); toast(`${msg}: ${p.name}`, `/admin/prospectos/${p.id}`); refreshSoon(); };

@@ -98,7 +98,7 @@ router.get('/admin/proyectos/:id', async (req, res, next) => {
   const body = html`
     <div class="lead-head">
       <div><h2>${pad2(d.number)} · ${d.name}</h2><p>${d.zone ?? 'Zona por confirmar'} · ${STATUS_LABELS[d.status]} · Responsable: <strong>${d.manager_id ? staff.find((s) => s.id === d.manager_id)?.name ?? '—' : 'sin asignar'}</strong></p></div>
-      <div class="actions">${d.published ? html`<a class="btn ghost" href="/desarrollos/${d.slug}" target="_blank">Ver ficha pública ↗</a>` : ''}${can(u, 'developments.manage') ? html`<a class="btn ghost" href="/admin/desarrollos/${d.id}">Editar ficha comercial</a>` : ''}</div>
+      <div class="actions"><a class="btn ghost" href="/admin/chat?ref=development:${d.id}">Compartir en chat</a>${d.published ? html`<a class="btn ghost" href="/desarrollos/${d.slug}" target="_blank">Ver ficha pública ↗</a>` : ''}${can(u, 'developments.manage') ? html`<a class="btn ghost" href="/admin/desarrollos/${d.id}">Editar ficha comercial</a>` : ''}</div>
     </div>
     <section class="kpis">
       ${Object.entries(LOT_STATUS).map(([k, label]) => html`<a class="kpi" href="?status=${k}"><span>${label}</span><strong>${counts[k]}</strong></a>`)}
@@ -204,7 +204,7 @@ router.get('/admin/lotes/:id', async (req, res, next) => {
   const visibleLead = async (id) => id && (can(req.user, 'leads.view_all') || (await one('SELECT 1 FROM leads WHERE id = $1 AND assigned_to = $2', [id, req.user.id])));
   const leadVisible = await visibleLead(l.lead_id);
   const body = html`
-    <div class="lead-head"><div><h2>Lote ${l.code}</h2><p><a href="/admin/proyectos/${l.development_id}">${l.development_name}</a> · ${lotBadge(l.status)}</p></div></div>
+    <div class="lead-head"><div><h2>Lote ${l.code}</h2><p><a href="/admin/proyectos/${l.development_id}">${l.development_name}</a> · ${lotBadge(l.status)}</p></div><div class="actions"><a class="btn ghost" href="/admin/chat?ref=lot:${l.id}">Compartir en chat</a></div></div>
     <div class="grid2">
       ${can(req.user, 'inventory.manage') ? html`<form class="card form" method="post" action="/admin/lotes/${l.id}">
         ${csrfField(req)}<h2>Datos del lote</h2>

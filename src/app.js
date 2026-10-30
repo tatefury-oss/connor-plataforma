@@ -4,10 +4,12 @@ import { config } from './config.js';
 import { cookieMiddleware } from './security/cookies.js';
 import { requireAuth } from './security/rbac.js';
 import { loadUser, requireCsrf } from './security/session.js';
+import { unreadNotifications, unreadTotal } from './services/chat.js';
 import auditRoutes from './routes/admin/audit.js';
 import dashboardRoutes from './routes/admin/dashboard.js';
 import developmentRoutes, { mountDevelopmentUploads } from './routes/admin/developments.js';
 import assistantRoutes from './routes/admin/assistant.js';
+import chatRoutes from './routes/admin/chat.js';
 import financeRoutes from './routes/admin/finance.js';
 import leadRoutes from './routes/admin/leads.js';
 import projectRoutes, { mountProjectUploads } from './routes/admin/projects.js';
@@ -60,6 +62,14 @@ export function createApp() {
   app.use('/admin', loadUser, (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.use(authRoutes);
   app.use('/admin', requireAuth);
+  // Contadores del menú (chat sin leer y notificaciones) para las páginas HTML del panel.
+  app.use('/admin', async (req, _res, next) => {
+    if (req.method === 'GET' && req.accepts(['html', 'json']) === 'html') {
+      const [chat, notifications] = await Promise.all([unreadTotal(req.user), unreadNotifications(req.user)]);
+      req.badges = { chat, notifications };
+    }
+    next();
+  });
   mountDevelopmentUploads(app, requireCsrf); // multipart: el token CSRF se lee tras procesar el formulario
   mountProjectUploads(app, requireCsrf);
   app.use('/admin', requireCsrf);
@@ -68,6 +78,7 @@ export function createApp() {
   app.use(projectRoutes);
   app.use(financeRoutes);
   app.use(assistantRoutes);
+  app.use(chatRoutes);
   app.use(developmentRoutes);
   app.use(settingsRoutes);
   app.use(userRoutes);

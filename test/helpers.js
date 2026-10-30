@@ -3,6 +3,7 @@ import { migrate } from '../src/migrate.js';
 import { seed } from '../src/seed.js';
 import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/security/passwords.js';
+import { flushNotifications } from '../src/services/realtime.js';
 
 export const PASSWORD = 'Contrasena-de-prueba-1';
 
@@ -21,7 +22,7 @@ export async function setup() {
   const server = createApp().listen(0);
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${server.address().port}`;
-  return { base, users, close: async () => { server.close(); await pool.end(); } };
+  return { base, users, close: async () => { server.close(); await flushNotifications(); await pool.end(); } };
 }
 
 // Cliente HTTP mínimo con cookies.

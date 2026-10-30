@@ -3,6 +3,7 @@ import { html } from '../html.js';
 
 const NAV = [
   ['/admin', 'Tablero', () => true],
+  ['/admin/chat', 'Chat del equipo', () => true],
   ['/admin/asistente', 'Asistente IA', (u) => can(u, 'assistant.use')],
   ['/admin/analitica', 'Analítica', (u) => can(u, 'analytics.view')],
   ['/admin/prospectos', 'Prospectos', canSeeLeads],
@@ -33,6 +34,7 @@ export function adminPage({ req, title, body, active }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="csrf-token" content="${req.csrfToken}">
+<meta name="user-id" content="${req.user.id}">
 <title>${title} · Panel CONNOR</title>
 <link rel="icon" href="/assets/325064d3b4316ae2578e7736d1db07c2.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
@@ -45,7 +47,7 @@ export function adminPage({ req, title, body, active }) {
   <aside class="side">
     <a class="brand" href="/admin"><span><span class="accent">CON</span>NOR</span><small>PANEL PRIVADO</small></a>
     <nav aria-label="Panel">
-      ${NAV.filter(([, , ok]) => ok(u)).map(([href, label]) => html`<a href="${href}" class="${active === href ? 'on' : ''}">${label}</a>`)}
+      ${NAV.filter(([, , ok]) => ok(u)).map(([href, label]) => html`<a href="${href}" class="${active === href ? 'on' : ''}">${label}${href === '/admin/chat' ? html` <b class="count" id="badge-chat" ${req.badges?.chat ? '' : 'hidden'}>${req.badges?.chat ?? 0}</b>` : ''}</a>`)}
     </nav>
     <div class="me">
       <strong>${u.name}</strong>
@@ -55,7 +57,7 @@ export function adminPage({ req, title, body, active }) {
     </div>
   </aside>
   <main class="main">
-    <header class="top"><h1>${title}</h1><span class="live" id="live" title="Sincronización en tiempo real">●</span></header>
+    <header class="top"><h1>${title}</h1><div class="top-actions"><a class="bell" href="/admin/notificaciones" aria-label="Notificaciones"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><b class="count" id="badge-notif" ${req.badges?.notifications ? '' : 'hidden'}>${req.badges?.notifications ?? 0}</b></a><span class="live" id="live" title="Sincronización en tiempo real">●</span></div></header>
     ${flash(req)}
     ${body}
   </main>

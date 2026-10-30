@@ -165,6 +165,7 @@ router.get('/admin/finanzas/ventas/:id', async (req, res, next) => {
       <div><h2>Venta #${s.id} · ${s.client_name}</h2><p>${saleBadge(s)} · ${s.development_name} · lote ${s.lot_code} · ${fmtDate(s.sale_date)}${s.advisor_name ? ` · asesor ${s.advisor_name}` : ''}</p>
       ${s.status === 'cancelada' ? html`<p class="alert err">Cancelada el ${fmtDateTime(s.cancelled_at)}: ${s.cancel_reason}</p>` : ''}</div>
       <div class="actions">
+        <a class="btn ghost" href="/admin/chat?ref=sale:${s.id}">Compartir en chat</a>
         <a class="btn ghost" href="/admin/finanzas/ventas/${s.id}/estado-de-cuenta" target="_blank">Estado de cuenta</a>
         <a class="btn ghost" href="/admin/finanzas/ventas/${s.id}/estado-de-cuenta.csv">CSV</a>
         ${seeLead ? html`<a class="btn ghost" href="/admin/prospectos/${s.lead_id}">Ficha del cliente</a>` : ''}
