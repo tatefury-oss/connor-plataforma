@@ -8,6 +8,7 @@ import auditRoutes from './routes/admin/audit.js';
 import dashboardRoutes from './routes/admin/dashboard.js';
 import developmentRoutes, { mountDevelopmentUploads } from './routes/admin/developments.js';
 import leadRoutes from './routes/admin/leads.js';
+import projectRoutes, { mountProjectUploads } from './routes/admin/projects.js';
 import settingsRoutes from './routes/admin/settings.js';
 import userRoutes from './routes/admin/users.js';
 import authRoutes from './routes/auth.js';
@@ -58,9 +59,11 @@ export function createApp() {
   app.use(authRoutes);
   app.use('/admin', requireAuth);
   mountDevelopmentUploads(app, requireCsrf); // multipart: el token CSRF se lee tras procesar el formulario
+  mountProjectUploads(app, requireCsrf);
   app.use('/admin', requireCsrf);
   app.use(dashboardRoutes);
   app.use(leadRoutes);
+  app.use(projectRoutes);
   app.use(developmentRoutes);
   app.use(settingsRoutes);
   app.use(userRoutes);

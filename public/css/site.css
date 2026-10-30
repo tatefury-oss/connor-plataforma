@@ -28,3 +28,8 @@ img { background: #1B2540; color: transparent }
 .wa-float:hover { color: #FFFFFF; transform: translateY(-2px) }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } }
+
+.avail { width: 100%; border-collapse: collapse; font-size: 15px; background: #FFFFFF }
+.avail th { position: sticky; top: 0; background: #0F1626; color: #FFFFFF; text-align: left; font: 700 11px Montserrat, sans-serif; letter-spacing: .14em; padding: 12px 14px; white-space: nowrap }
+.avail td { padding: 11px 14px; border-bottom: 1px solid #EFEAE2; white-space: nowrap }
+.avail tbody tr:nth-child(even) td { background: #FBFAF7 }

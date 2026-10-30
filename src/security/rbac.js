@@ -18,6 +18,12 @@ const PERMISSIONS = {
   'users.manage': ['admin'],
   'audit.view': ['admin'],
   'reports.commercial': ['admin', 'gerencia'],
+  'inventory.view': ['admin', 'gerencia', 'asesor'],
+  'inventory.reserve': ['admin', 'gerencia', 'asesor'],
+  'inventory.sell': ['admin', 'gerencia'],
+  'inventory.manage': ['admin'],
+  'projects.tasks': ['admin', 'gerencia'],
+  'projects.documents': ['admin', 'gerencia'],
 };
 
 export function can(user, permission) {

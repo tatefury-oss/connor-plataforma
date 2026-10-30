@@ -1,4 +1,5 @@
 import { pad2 } from '../../services/developments.js';
+import { money } from '../../services/inventory.js';
 import { html } from '../html.js';
 import { ctaSection } from './home.js';
 import { page, waHref } from './layout.js';
@@ -22,7 +23,7 @@ function mediaItem(m) {
   return html`<a href="${m.url}" target="_blank" rel="noopener"><img src="${m.url}" alt="${m.alt}" loading="lazy" style="display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover"></a>`;
 }
 
-export function developmentPage({ s, d, media, developments, sent, errors, values }) {
+export function developmentPage({ s, d, media, developments, lots = [], hasInventory = false, sent, errors, values }) {
   const hasMap = d.latitude != null && d.longitude != null;
   const lat = Number(d.latitude), lon = Number(d.longitude);
   const bbox = [lon - 0.012, lat - 0.008, lon + 0.012, lat + 0.008].map((n) => n.toFixed(6)).join('%2C');
@@ -62,6 +63,24 @@ export function developmentPage({ s, d, media, developments, sent, errors, value
       </div>
     </div>
   </section>
+
+  ${hasInventory ? html`
+  <section aria-label="Disponibilidad" style="background: #FFFFFF; border-top: 1px solid #E2DBCF">
+    <div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 7vw, 96px) clamp(16px, 4vw, 40px); display: flex; flex-direction: column; gap: 24px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div style="${M}; font-weight: 700; font-size: 13px; letter-spacing: 0.22em; color: #1747B8">DISPONIBILIDAD</div>
+          <h2 style="margin: 0; ${M}; font-weight: 800; font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.1; color: #0F1626">${lots.length ? `${lots.length} ${lots.length === 1 ? 'lote disponible' : 'lotes disponibles'}` : 'Por ahora no hay lotes disponibles'}</h2>
+        </div>
+        <span style="font-size: 14px; color: #5D6678">Actualizado en tiempo real · sujeto a confirmación</span>
+      </div>
+      ${lots.length ? html`<div style="overflow-x: auto; border: 1px solid #E2DBCF; max-height: 520px; overflow-y: auto">
+        <table class="avail">
+          <thead><tr><th>Lote</th><th>Manzana</th><th>Superficie</th><th>Medidas</th><th>Precio</th></tr></thead>
+          <tbody>${lots.map((l) => html`<tr><td>${l.code}</td><td>${l.block || '—'}</td><td>${l.area_m2 ? `${Number(l.area_m2)} m²` : '—'}</td><td>${l.front_m && l.depth_m ? `${Number(l.front_m)} × ${Number(l.depth_m)} m` : '—'}</td><td>${l.price ? money(l.price, l.currency) : 'Consultar'}</td></tr>`)}</tbody>
+        </table></div>` : html`<p style="margin: 0; font-size: 17px; color: #4A5468">Déjanos tus datos y te avisamos cuando se libere un lote.</p>`}
+    </div>
+  </section>` : ''}
 
   ${media.length ? html`
   <section aria-label="Galería" style="background: #FFFFFF">

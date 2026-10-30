@@ -10,7 +10,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 2 | Sitio público con el diseño aprobado + administrador de contenidos | ✅ Listo |
 | 3 | CRM Lite: prospectos, embudo, seguimiento, etiquetas, filtros, exportación | ✅ Listo |
 | 4 | WhatsApp Business API, asistente con IA y Round Robin | ✅ Listo en código · **requiere credenciales de Meta y de Anthropic** para operar |
-| 5 | Inventario de lotes por desarrollo | ⏳ Pendiente (ya existe la ficha del proyecto, coordenadas, superficie y número de lotes) |
+| 5 | Administración de proyectos e inventario de lotes | ✅ Listo |
 | 6 | Finanzas y cartera (ventas, planes de pago, abonos, morosidad, estados de cuenta) | ⏳ Pendiente (el rol Finanzas ya existe) |
 | 7 | Asistente de IA, reportes y analítica avanzada | ⏳ Pendiente (el tablero ya tiene los indicadores comerciales) |
 | 8 | Chat interno | ⏳ Pendiente (la sincronización en tiempo real con Socket.IO ya funciona) |
@@ -49,6 +49,19 @@ Límites de seguridad: el asistente no puede leer datos de otros clientes, no ve
 
 Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configurado (ver más abajo). Sin ellos el sitio y el CRM funcionan igual y el panel indica que el asistente no está configurado.
 
+## Proyectos e inventario (fase 5)
+
+- **Tablero de proyectos** (`/admin/proyectos`): lotes totales, disponibles, apartados y vendidos por desarrollo, avance de venta, valor del inventario disponible, responsable y actividades pendientes o vencidas.
+- **Inventario por proyecto:** los lotes se cargan pegando desde Excel (`clave; manzana; lote; m²; frente; fondo; precio`). Volver a importar actualiza medidas y precios sin tocar el estatus ni el cliente.
+- **Estatus del lote:** Disponible, Apartado, Vendido o Bloqueado. Cada cambio queda en el historial del lote, en la ficha del cliente y en la auditoría.
+  - Un asesor aparta solo para sus propios prospectos (también desde la ficha del prospecto) y solo él o gerencia pueden liberar ese apartado.
+  - Vender es de gerencia y administración; la venta mueve al prospecto a la etapa "Venta".
+  - Cancelar una venta es solo del administrador y exige motivo.
+  - Dos personas no pueden apartar el mismo lote a la vez: la base de datos bloquea el registro durante el cambio y además impide un lote apartado o vendido sin cliente.
+  - Los apartados con fecha de vencimiento se liberan solos cada hora y se avisa a quien apartó.
+- **Sitio público:** la ficha de cada desarrollo con inventario muestra la tabla de lotes disponibles (sin datos de clientes). El asistente de WhatsApp conoce cuántos lotes hay disponibles.
+- **Avances y actividades** con responsable y fecha compromiso, y **documentación privada** (planos, permisos, escrituras en PDF/JPG/PNG). Los documentos se guardan fuera de la carpeta pública, solo los descargan administración y gerencia, y cada descarga queda auditada.
+
 ## Roles (mínimo privilegio)
 
 | Permiso | Admin | Gerencia | Asesor | Finanzas |
@@ -56,6 +69,11 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 | Tablero | ✔ | ✔ | Solo lo suyo | Aviso de fase 6 |
 | Ver prospectos | Todos | Todos | **Solo los asignados** | ✘ |
 | Reasignar / exportar | ✔ | ✔ | ✘ (puede escalar) | ✘ |
+| Ver inventario | ✔ | ✔ | ✔ (sin datos de clientes ajenos) | ✘ |
+| Apartar lote | ✔ | ✔ | Solo para sus prospectos | ✘ |
+| Vender / liberar cualquier apartado | ✔ | ✔ | ✘ | ✘ |
+| Cargar lotes, bloquear, cancelar ventas | ✔ | ✘ | ✘ | ✘ |
+| Actividades y documentos de proyecto | ✔ | ✔ | ✘ | ✘ |
 | Desarrollos, sitio, usuarios, auditoría | ✔ | ✘ | ✘ | ✘ |
 
 El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor intenta abrir un prospecto ajeno, recibe un 404.
@@ -99,7 +117,7 @@ npm test
 3. **Dominio y HTTPS.** Usar `NODE_ENV=production`, `PUBLIC_URL` y `TRUST_PROXY=1` si hay un proxy delante.
 4. **Datos de la empresa** que el diseño dejó como marcadores: año de fundación, correo, dirección de oficina, zona y precio total de Hacienda Flor de Mayo, precio total de Los Pinos y URL de Facebook. Mientras estén vacíos no se muestran (o aparecen como "Por confirmar"). Se capturan en *Sitio público* y *Desarrollos*.
 5. **Aviso de privacidad.** Hay un texto base. Debe revisarlo un abogado (LFPDPPP) y pegarse en *Sitio público → Legal*.
-6. **Respaldos.** Programar `pg_dump` diario de la base y copia de la carpeta `uploads/` (o migrar a almacenamiento S3/R2).
+6. **Respaldos.** Programar `pg_dump` diario de la base y copia de las carpetas `uploads/` y `private-docs/` (o migrar a almacenamiento S3/R2 con acceso privado para los documentos).
 
 ## Estructura
 

@@ -7,6 +7,7 @@ import { migrate } from './migrate.js';
 import { parseCookies } from './security/cookies.js';
 import { SESSION_COOKIE, sessionFromToken } from './security/session.js';
 import { botConfigured, handleInbound } from './services/bot.js';
+import { releaseExpiredReservations } from './services/inventory.js';
 import { setIo } from './services/realtime.js';
 import { setInboundHandler } from './services/whatsapp.js';
 import { seed } from './seed.js';
@@ -37,7 +38,10 @@ io.on('connection', (socket) => {
 setIo(io);
 setInboundHandler(handleInbound);
 
-const cleanup = setInterval(() => query('DELETE FROM sessions WHERE expires_at < now()').catch(() => {}), 60 * 60 * 1000);
+const cleanup = setInterval(() => {
+  query('DELETE FROM sessions WHERE expires_at < now()').catch(() => {});
+  releaseExpiredReservations().catch((err) => console.error('[inventario] error al liberar apartados', err));
+}, 60 * 60 * 1000);
 
 server.listen(config.port, () => {
   console.log(`CONNOR escuchando en ${config.publicUrl}`);

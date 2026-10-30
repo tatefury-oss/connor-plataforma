@@ -9,6 +9,7 @@ import {
   escalateLead, getLead, listLeads, normalizePhone, reassignLead, updateLead,
 } from '../../services/leads.js';
 import { botConfigured, botRunsFor, setBotPaused } from '../../services/bot.js';
+import { LOT_STATUS, lotsForLead, money } from '../../services/inventory.js';
 import { messagesFor, sendText } from '../../services/whatsapp.js';
 import { fmtDate, fmtDateTime, fromLocalInput, html, toLocalInput } from '../../views/html.js';
 import { adminPage, csrfField, pager } from '../../views/admin/layout.js';
@@ -162,12 +163,16 @@ router.post('/admin/prospectos', requirePermission('leads.create'), async (req, 
 router.get('/admin/prospectos/:id', async (req, res, next) => {
   const lead = await getLead(req.user, req.params.id);
   if (!lead) return next();
-  const [activities, assignments, devs, advisors, wa, botRuns] = await Promise.all([
+  const [activities, assignments, devs, advisors, wa, botRuns, leadLots, freeLots] = await Promise.all([
     activitiesFor(lead.id), assignmentsFor(lead.id),
     many('SELECT id, name FROM developments ORDER BY sort_order, number'),
     can(req.user, 'leads.reassign') ? activeAdvisors() : [],
     messagesFor(lead.id),
     botRunsFor(lead.id),
+    lotsForLead(lead.id),
+    lead.development_id && can(req.user, 'inventory.reserve')
+      ? many(`SELECT id, code, area_m2, price, currency FROM lots WHERE development_id = $1 AND status = 'disponible' ORDER BY block, length(number), number, code LIMIT 500`, [lead.development_id])
+      : [],
   ]);
   const country = lead.phone_normalized?.startsWith('1') ? '1' : '52';
   const body = html`
@@ -229,6 +234,17 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
         </section>
       </div>
     </div>
+
+    <section class="card">
+      <h2>Lotes</h2>
+      ${leadLots.length ? html`<table><thead><tr><th>Lote</th><th>Desarrollo</th><th class="num">m²</th><th class="num">Precio</th><th>Estatus</th></tr></thead><tbody>
+        ${leadLots.map((l) => html`<tr><td><a href="/admin/lotes/${l.id}">${l.code}</a></td><td>${l.development_name}</td><td class="num">${l.area_m2 ?? '—'}</td><td class="num">${money(l.price, l.currency)}</td><td>${LOT_STATUS[l.status]}${l.reserved_until ? ` · vence ${fmtDate(l.reserved_until)}` : ''}</td></tr>`)}
+      </tbody></table>` : html`<p class="muted">Sin lotes apartados ni vendidos.</p>`}
+      ${freeLots.length ? html`<form class="inline" method="post" action="/admin/lotes/apartar">${csrfField(req)}<input type="hidden" name="lead_id" value="${lead.id}">
+        <select name="lot_id" required><option value="">Apartar lote disponible de ${lead.development_name}…</option>${freeLots.map((l) => html`<option value="${l.id}">${l.code} · ${l.area_m2 ?? '—'} m² · ${money(l.price, l.currency)}</option>`)}</select>
+        <input type="date" name="reserved_until" title="Vencimiento del apartado"><button class="btn small" type="submit">Apartar</button></form>`
+        : lead.development_id ? '' : html`<p class="muted">Asigna un desarrollo al prospecto para apartar un lote.</p>`}
+    </section>
 
     <section class="card">
       <h2>Seguimiento</h2>
