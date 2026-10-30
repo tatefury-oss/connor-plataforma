@@ -46,6 +46,10 @@ const GROUPS = [
     ['financing_down_payment_text', 'Texto del enganche'],
     ['financing_max_payments', 'Mensualidades destacadas'],
   ]],
+  ['Asistente de WhatsApp', [
+    ['bot_enabled', 'Estado del asistente', 'bool'],
+    ['bot_instructions', 'Indicaciones adicionales para el asistente (promociones vigentes, horarios de visita, etc.)', 'textarea'],
+  ]],
   ['Legal', [
     ['privacy_notice', 'Aviso de privacidad (vacío = texto base; debe revisarlo un abogado)', 'textarea'],
   ]],
@@ -58,7 +62,9 @@ router.get('/admin/configuracion', async (req, res) => {
     ${GROUPS.map(([title, items]) => html`<section class="card"><h2>${title}</h2><div class="fields">
       ${items.map(([k, label, type]) => html`<label class="${type === 'textarea' ? 'wide' : ''}">${label}${type === 'textarea'
         ? html`<textarea name="${k}" rows="${k === 'privacy_notice' ? 12 : 3}">${s[k]}</textarea>`
-        : html`<input name="${k}" value="${s[k]}">`}</label>`)}
+        : type === 'bool'
+          ? html`<select name="${k}"><option value="1" ${s[k] === '1' ? 'selected' : ''}>Activo</option><option value="0" ${s[k] !== '1' ? 'selected' : ''}>Desactivado</option></select>`
+          : html`<input name="${k}" value="${s[k]}">`}</label>`)}
     </div></section>`)}
     <div class="sticky-save"><button class="btn" type="submit">Guardar y publicar</button> <a class="btn ghost" href="/" target="_blank">Ver sitio ↗</a></div>
   </form>`;
@@ -73,6 +79,7 @@ router.post('/admin/configuracion', async (req, res) => {
   if (values.facebook_url && !/^https:\/\//.test(values.facebook_url)) {
     return res.redirect(303, `/admin/configuracion?error=${encodeURIComponent('La URL de Facebook debe iniciar con https://')}`);
   }
+  if ('bot_enabled' in values) values.bot_enabled = values.bot_enabled === '1' ? '1' : '0';
   await updateSettings(values, req);
   res.redirect(303, '/admin/configuracion?msg=ok');
 });

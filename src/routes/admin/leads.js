@@ -8,6 +8,7 @@ import {
   ACTIVITY_TYPES, SOURCES, STAGES, activeAdvisors, activitiesFor, addActivity, assignmentsFor, captureLead,
   escalateLead, getLead, listLeads, normalizePhone, reassignLead, updateLead,
 } from '../../services/leads.js';
+import { botConfigured, botRunsFor, setBotPaused } from '../../services/bot.js';
 import { messagesFor, sendText } from '../../services/whatsapp.js';
 import { fmtDate, fmtDateTime, fromLocalInput, html, toLocalInput } from '../../views/html.js';
 import { adminPage, csrfField, pager } from '../../views/admin/layout.js';
@@ -161,11 +162,12 @@ router.post('/admin/prospectos', requirePermission('leads.create'), async (req, 
 router.get('/admin/prospectos/:id', async (req, res, next) => {
   const lead = await getLead(req.user, req.params.id);
   if (!lead) return next();
-  const [activities, assignments, devs, advisors, wa] = await Promise.all([
+  const [activities, assignments, devs, advisors, wa, botRuns] = await Promise.all([
     activitiesFor(lead.id), assignmentsFor(lead.id),
     many('SELECT id, name FROM developments ORDER BY sort_order, number'),
     can(req.user, 'leads.reassign') ? activeAdvisors() : [],
     messagesFor(lead.id),
+    botRunsFor(lead.id),
   ]);
   const country = lead.phone_normalized?.startsWith('1') ? '1' : '52';
   const body = html`
@@ -210,7 +212,16 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
         </section>
 
         <section class="card"><h2>WhatsApp</h2>
-          <div class="chat">${wa.length ? wa.map((m) => html`<div class="msg ${m.direction}"><p>${m.body}</p><small>${fmtDateTime(m.created_at)}${m.direction === 'out' ? ` · ${m.sent_by_name ?? ''} · ${m.status ?? ''}` : ''}</small></div>`) : html`<p class="muted">Sin mensajes registrados por la API.</p>`}</div>
+          <div class="bot-status">
+            ${!botConfigured()
+              ? html`<span class="muted">Asistente virtual sin configurar en el servidor.</span>`
+              : lead.bot_paused_at
+                ? html`<span><strong>Asistente en pausa</strong> desde ${fmtDateTime(lead.bot_paused_at)}${lead.bot_pause_reason ? html` · ${lead.bot_pause_reason}` : ''}</span>`
+                : html`<span><strong>Asistente activo</strong>: responde automáticamente los mensajes de este cliente.</span>`}
+            ${botConfigured() ? html`<form method="post" action="/admin/prospectos/${lead.id}/bot">${csrfField(req)}<input type="hidden" name="paused" value="${lead.bot_paused_at ? '0' : '1'}"><button class="btn small ghost" type="submit">${lead.bot_paused_at ? 'Reactivar asistente' : 'Pausar asistente'}</button></form>` : ''}
+          </div>
+          ${botRuns.length ? html`<details><summary>Actividad del asistente (${botRuns.length})</summary><ul class="timeline small">${botRuns.map((r) => html`<li><time>${fmtDateTime(r.created_at)}</time> ${r.status}${r.detail ? ` · ${r.detail}` : ''}</li>`)}</ul></details>` : ''}
+          <div class="chat">${wa.length ? wa.map((m) => html`<div class="msg ${m.direction}"><p>${m.body}</p><small>${fmtDateTime(m.created_at)}${m.direction === 'out' ? ` · ${m.sent_by_bot ? 'Asistente virtual' : m.sent_by_name ?? ''} · ${m.status ?? ''}` : ''}</small></div>`) : html`<p class="muted">Sin mensajes registrados por la API.</p>`}</div>
           ${whatsappSendEnabled()
             ? html`<form class="inline" method="post" action="/admin/prospectos/${lead.id}/whatsapp">${csrfField(req)}<input name="body" required maxlength="1000" placeholder="Escribe una respuesta…"><button class="btn small" type="submit">Enviar</button></form>
               <p class="muted">Meta solo permite texto libre dentro de las 24 h posteriores al último mensaje del cliente.</p>`
@@ -292,6 +303,15 @@ router.post('/admin/prospectos/:id/escalar', async (req, res, next) => {
   const lead = await escalateLead(req.user, req.params.id, note, req);
   if (!lead) return next();
   back(res, req.params.id, 'msg=ok');
+});
+
+router.post('/admin/prospectos/:id/bot', async (req, res, next) => {
+  const lead = await getLead(req.user, req.params.id);
+  if (!lead) return next();
+  const paused = req.body.paused === '1';
+  await setBotPaused(lead.id, paused, paused ? `Pausado por ${req.user.name}` : null);
+  await addActivity(req.user, lead.id, { type: 'sistema', body: paused ? 'Asistente virtual pausado manualmente.' : 'Asistente virtual reactivado.' }, req);
+  back(res, lead.id, 'msg=ok');
 });
 
 router.post('/admin/prospectos/:id/whatsapp', async (req, res, next) => {

@@ -8,6 +8,10 @@ import { audit } from './audit.js';
 import { captureLead } from './leads.js';
 import { notifyRoles, notifyUser } from './realtime.js';
 
+// Lo registra el servidor (asistente virtual); se ejecuta tras responder 200 a Meta.
+let inboundHandler = null;
+export function setInboundHandler(fn) { inboundHandler = fn; }
+
 export function verifySignature(rawBody, header) {
   if (!config.whatsapp.appSecret || !header?.startsWith('sha256=')) return false;
   const expected = createHmac('sha256', config.whatsapp.appSecret).update(rawBody).digest('hex');
@@ -51,6 +55,10 @@ export async function handleWebhook(payload) {
         if (lead.assigned_to) notifyUser(lead.assigned_to, 'wa:message', event);
         notifyRoles(['admin', 'gerencia'], 'wa:message', event);
         results.push(lead.id);
+        if (inboundHandler) {
+          setImmediate(() => Promise.resolve(inboundHandler({ leadId: lead.id, body }))
+            .catch((err) => console.error('[bot] error al procesar mensaje', err)));
+        }
       }
 
       for (const s of value.statuses ?? []) {
@@ -69,14 +77,14 @@ export function messagesFor(leadId) {
   );
 }
 
-export async function sendText({ lead, body, user, req }) {
+// Envío de texto libre por la Cloud API. Solo es válido dentro de las 24 h del último mensaje del cliente.
+export async function deliver({ leadId, phone, body, userId = null, bot = false }) {
   if (!whatsappSendEnabled()) return { ok: false, error: 'WhatsApp Business API no está configurada en el servidor.' };
-  if (!lead.phone_normalized) return { ok: false, error: 'El prospecto no tiene teléfono registrado.' };
   const { graphVersion, phoneNumberId, accessToken } = config.whatsapp;
   const res = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to: lead.phone_normalized, type: 'text', text: { body } }),
+    body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body } }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -85,9 +93,19 @@ export async function sendText({ lead, body, user, req }) {
   }
   const waId = data.messages?.[0]?.id ?? null;
   await query(
-    `INSERT INTO wa_messages (wa_message_id, lead_id, direction, phone, body, status, sent_by) VALUES ($1, $2, 'out', $3, $4, 'sent', $5)`,
-    [waId, lead.id, lead.phone_normalized, body, user.id],
+    `INSERT INTO wa_messages (wa_message_id, lead_id, direction, phone, body, status, sent_by, sent_by_bot)
+     VALUES ($1, $2, 'out', $3, $4, 'sent', $5, $6)`,
+    [waId, leadId, phone, body, userId, bot],
   );
-  await audit({ req, action: 'whatsapp.send', entity: 'lead', entityId: lead.id, details: { wa_message_id: waId } });
+  return { ok: true, waId };
+}
+
+export async function sendText({ lead, body, user, req }) {
+  if (!lead.phone_normalized) return { ok: false, error: 'El prospecto no tiene teléfono registrado.' };
+  const r = await deliver({ leadId: lead.id, phone: lead.phone_normalized, body, userId: user.id });
+  if (!r.ok) return r;
+  // Si un asesor responde, el asistente se retira de la conversación.
+  await query(`UPDATE leads SET bot_paused_at = COALESCE(bot_paused_at, now()), bot_pause_reason = COALESCE(bot_pause_reason, 'Respondió un asesor') WHERE id = $1`, [lead.id]);
+  await audit({ req, action: 'whatsapp.send', entity: 'lead', entityId: lead.id, details: { wa_message_id: r.waId } });
   return { ok: true };
 }

@@ -6,7 +6,9 @@ import { pool, query } from './db.js';
 import { migrate } from './migrate.js';
 import { parseCookies } from './security/cookies.js';
 import { SESSION_COOKIE, sessionFromToken } from './security/session.js';
+import { botConfigured, handleInbound } from './services/bot.js';
 import { setIo } from './services/realtime.js';
+import { setInboundHandler } from './services/whatsapp.js';
 import { seed } from './seed.js';
 
 await migrate();
@@ -33,12 +35,14 @@ io.on('connection', (socket) => {
   socket.join([`user:${id}`, `role:${role}`]);
 });
 setIo(io);
+setInboundHandler(handleInbound);
 
 const cleanup = setInterval(() => query('DELETE FROM sessions WHERE expires_at < now()').catch(() => {}), 60 * 60 * 1000);
 
 server.listen(config.port, () => {
   console.log(`CONNOR escuchando en ${config.publicUrl}`);
   if (!whatsappReceiveEnabled()) console.log('· WhatsApp (recepción) sin configurar: faltan WHATSAPP_VERIFY_TOKEN / WHATSAPP_APP_SECRET');
+  if (!botConfigured()) console.log('· Asistente virtual inactivo: requiere ANTHROPIC_API_KEY y el envío de WhatsApp configurado');
   if (!whatsappSendEnabled()) console.log('· WhatsApp (envío) sin configurar: faltan WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID');
 });
 

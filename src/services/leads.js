@@ -35,6 +35,7 @@ export const ACTIVITY_TYPES = {
   etapa: 'Cambio de etapa',
   asignacion: 'Asignación',
   sistema: 'Sistema',
+  bot: 'Asistente virtual',
 };
 
 // Tipos que cuentan como "primer contacto" para medir tiempo de respuesta.
