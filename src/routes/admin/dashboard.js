@@ -129,10 +129,11 @@ async function advisorDashboard(req) {
 }
 
 router.get('/admin', async (req, res) => {
+  if (req.user.role === 'finanzas') return res.redirect(303, '/admin/finanzas');
   let body;
   if (can(req.user, 'reports.commercial')) body = await managementDashboard(req);
   else if (req.user.role === 'asesor') body = await advisorDashboard(req);
-  else body = html`<section class="card"><h2>Finanzas y cartera</h2><p>El módulo financiero (ventas, planes de pago, abonos, cartera vencida y estados de cuenta) corresponde a la Fase 6 y aún no está habilitado. Tu acceso se limita a esta sección por el principio de mínimo privilegio.</p></section>`;
+  else body = html`<p class="muted">Sin indicadores para tu rol.</p>`;
   res.send(String(adminPage({ req, title: 'Tablero', active: '/admin', body })));
 });
 

@@ -3,6 +3,8 @@ import { config } from './config.js';
 
 // Los ids bigserial caben en un Number; evita comparar cadenas con números.
 pg.types.setTypeParser(20, Number);
+// Las columnas DATE se manejan como texto 'AAAA-MM-DD' para que no se desplacen por zona horaria.
+pg.types.setTypeParser(1082, (v) => v);
 
 export const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 10 });
 

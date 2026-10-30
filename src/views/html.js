@@ -29,7 +29,14 @@ export function safeUrl(url) {
   return '#';
 }
 
-export const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('es-MX', { timeZone: 'America/Tijuana', day: '2-digit', month: 'short', year: 'numeric' }) : '');
+export const fmtDate = (d) => {
+  if (!d) return '';
+  // Una fecha sin hora ('AAAA-MM-DD') es un día de calendario: no se convierte de zona horaria.
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return new Date(`${d}T12:00:00Z`).toLocaleDateString('es-MX', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  return new Date(d).toLocaleDateString('es-MX', { timeZone: 'America/Tijuana', day: '2-digit', month: 'short', year: 'numeric' });
+};
 export const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('es-MX', { timeZone: 'America/Tijuana', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
 
 // Valor para <input type="datetime-local"> en hora de Tijuana.

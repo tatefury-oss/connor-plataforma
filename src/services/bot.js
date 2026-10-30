@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config, whatsappSendEnabled } from '../config.js';
 import { many, one, query, tx } from '../db.js';
 import { listPublished } from './developments.js';
+import { availableCounts } from './inventory.js';
 import { STAGES } from './leads.js';
 import { notifyRoles, notifyUser } from './realtime.js';
 import { getSettings } from './settings.js';
@@ -64,6 +65,7 @@ function catalog(s, developments) {
     `Estatus: ${d.status}${d.badge ? ` · ${d.badge}` : ''}`,
     ...(d.stats || []).map((x) => `${x.label}: ${x.value}${x.detail ? ` (${x.detail})` : ''}`),
     `PRECIO TOTAL: ${d.total_price || 'por confirmar con un asesor'}`,
+    d.available_lots != null ? `Lotes disponibles en este momento: ${d.available_lots}` : '',
     d.features?.length ? `Características: ${d.features.join('; ')}` : '',
     d.description ? `Descripción: ${d.description}` : '',
     `Ficha: ${config.publicUrl}/desarrollos/${d.slug}`,
@@ -191,7 +193,9 @@ async function runOnce(leadId) {
     return { status: 'transferido' };
   }
 
-  const developments = await listPublished();
+  const [published, counts] = await Promise.all([listPublished(), availableCounts()]);
+  // Solo se informa la disponibilidad de desarrollos con inventario cargado.
+  const developments = published.map((d) => ({ ...d, available_lots: d.total_lots > 0 ? counts.find((c) => c.development_id === d.id)?.n ?? 0 : null }));
   const { n: priorLeadMsgs } = await one(`SELECT count(*)::int AS n FROM lead_activities WHERE lead_id = $1 AND created_at < now() - interval '1 day'`, [lead.id]);
   const messages = toMessages(history);
   if (!messages.length) return { status: 'omitido' };

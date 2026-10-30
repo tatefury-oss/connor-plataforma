@@ -46,6 +46,9 @@
     socket.on('lead:escalated', lead('Prospecto escalado'));
     socket.on('lead:handoff', lead('El asistente transfirió a'));
     socket.on('lead:visit', lead('Solicitud de visita por WhatsApp'));
+    socket.on('finance:changed', () => { if (location.pathname.startsWith('/admin/finanzas')) refreshSoon(); });
+    socket.on('lot:changed', () => { if (/^\/admin\/(proyectos|lotes)/.test(location.pathname)) refreshSoon(); });
+    socket.on('lot:expired', (p) => { bump(); toast(`Venció el apartado del lote ${p.code}`, `/admin/lotes/${p.id}`); });
     socket.on('wa:message', (p) => {
       bump();
       toast(`WhatsApp de ${p.name}: ${String(p.body).slice(0, 80)}`, `/admin/prospectos/${p.leadId}`);

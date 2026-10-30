@@ -18,11 +18,24 @@ const PERMISSIONS = {
   'users.manage': ['admin'],
   'audit.view': ['admin'],
   'reports.commercial': ['admin', 'gerencia'],
+  'inventory.view': ['admin', 'gerencia', 'asesor'],
+  'inventory.reserve': ['admin', 'gerencia', 'asesor'],
+  'inventory.sell': ['admin', 'gerencia'],
+  'inventory.manage': ['admin'],
+  'projects.tasks': ['admin', 'gerencia'],
+  'projects.documents': ['admin', 'gerencia'],
+  'finance.view_all': ['admin', 'gerencia', 'finanzas'],
+  'finance.view_own': ['asesor'],
+  'finance.manage': ['admin', 'finanzas'],
+  'finance.void': ['admin'],
+  'finance.cancel_sale': ['admin'],
 };
 
 export function can(user, permission) {
   return Boolean(user && PERMISSIONS[permission]?.includes(user.role));
 }
+
+export const canSeeFinance = (user) => can(user, 'finance.view_all') || can(user, 'finance.view_own');
 
 export const canSeeLeads = (user) => can(user, 'leads.view_all') || can(user, 'leads.view_own');
 

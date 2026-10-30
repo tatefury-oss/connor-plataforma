@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { getPublishedBySlug, listPublished, mediaFor } from '../services/developments.js';
+import { publicAvailability } from '../services/inventory.js';
 import { captureLead, normalizePhone } from '../services/leads.js';
 import { getSettings } from '../services/settings.js';
 import { developmentPage } from '../views/public/development.js';
@@ -42,8 +43,9 @@ router.get('/', (req, res) => renderHome(req, res));
 router.get('/desarrollos/:slug', async (req, res, next) => {
   const d = await getPublishedBySlug(req.params.slug);
   if (!d) return next();
-  const [s, media, developments] = await Promise.all([getSettings(), mediaFor(d.id), listPublished()]);
-  res.send(String(developmentPage({ s, d, media, developments, sent: req.query.enviado === '1' })));
+  const [s, media, developments, lots] = await Promise.all([getSettings(), mediaFor(d.id), listPublished(), publicAvailability(d.id)]);
+  const hasInventory = d.total_lots > 0;
+  res.send(String(developmentPage({ s, d, media, developments, lots, hasInventory, sent: req.query.enviado === '1' })));
 });
 
 router.get('/aviso-de-privacidad', async (_req, res) => {

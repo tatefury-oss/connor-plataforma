@@ -108,4 +108,14 @@ body.login { display: grid; place-items: center; min-height: 100vh; background: 
   .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px }
   .side nav { flex-direction: row; flex-wrap: wrap } .me { margin: 0; flex-direction: row; flex-wrap: wrap; gap: 12px }
 }
+.lot { display: inline-block; font: 700 11px Montserrat, sans-serif; padding: 3px 9px; white-space: nowrap }
+.l-disponible { background: #ECFDF3; color: var(--ok) } .l-apartado { background: #FFF6ED; color: #B54708 } .l-vendido { background: #EAF0FE; color: var(--blue-d) } .l-bloqueado { background: #F2F4F7; color: #667085 }
+.progress { position: relative; display: flex; width: 140px; height: 10px; background: #EFEAE2 } .progress i { background: var(--blue) } .progress b { background: var(--warn) }
+form.mini { display: inline-flex; flex-wrap: wrap; gap: 4px; margin: 2px 4px 2px 0; align-items: center }
+form.mini select, form.mini input { width: auto; max-width: 180px; padding: 6px 8px; font-size: 13px }
+.lot-actions { min-width: 260px } .filters.inset { border: 0; border-bottom: 1px solid var(--line); margin: 0 }
+a.kpi { text-decoration: none; color: inherit } a.kpi:hover { border-color: var(--blue) }
+.docs { margin: 12px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px }
 .bot-status { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: var(--sand); padding: 10px 12px; margin-bottom: 12px; font-size: 14px }
+.nowrap { white-space: nowrap }
+.section-title { font: 800 14px Montserrat, sans-serif; color: var(--ink); margin: 4px 0 10px } tr.voided td { color: #98A2B3; text-decoration: line-through } tr.voided td:last-child { text-decoration: none }

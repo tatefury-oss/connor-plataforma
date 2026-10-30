@@ -1,10 +1,12 @@
-import { can, canSeeLeads, ROLES } from '../../security/rbac.js';
+import { can, canSeeFinance, canSeeLeads, ROLES } from '../../security/rbac.js';
 import { html } from '../html.js';
 
 const NAV = [
   ['/admin', 'Tablero', () => true],
   ['/admin/prospectos', 'Prospectos', canSeeLeads],
   ['/admin/embudo', 'Embudo', canSeeLeads],
+  ['/admin/proyectos', 'Proyectos e inventario', (u) => can(u, 'inventory.view')],
+  ['/admin/finanzas', 'Finanzas y cartera', canSeeFinance],
   ['/admin/desarrollos', 'Desarrollos', (u) => can(u, 'developments.manage')],
   ['/admin/configuracion', 'Sitio público', (u) => can(u, 'settings.manage')],
   ['/admin/usuarios', 'Usuarios', (u) => can(u, 'users.manage')],
@@ -16,7 +18,8 @@ export const csrfField = (req) => html`<input type="hidden" name="_csrf" value="
 export function flash(req) {
   const msg = { ok: 'Cambios guardados.', creado: 'Registro creado.', enviado: 'Mensaje enviado.' }[req.query.msg];
   const err = req.query.error;
-  return html`${msg ? html`<div class="alert ok" role="status">${msg}</div>` : ''}${err ? html`<div class="alert err" role="alert">${err}</div>` : ''}`;
+  const notice = typeof req.query.aviso === 'string' ? req.query.aviso.slice(0, 200) : '';
+  return html`${msg ? html`<div class="alert ok" role="status">${msg}</div>` : ''}${notice ? html`<div class="alert ok" role="status">${notice}</div>` : ''}${err ? html`<div class="alert err" role="alert">${err}</div>` : ''}`;
 }
 
 export function adminPage({ req, title, body, active }) {
