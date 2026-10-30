@@ -18,6 +18,7 @@ const PERMISSIONS = {
   'users.manage': ['admin'],
   'audit.view': ['admin'],
   'reports.commercial': ['admin', 'gerencia'],
+  'privacy.manage': ['admin'],
   'inventory.view': ['admin', 'gerencia', 'asesor'],
   'inventory.reserve': ['admin', 'gerencia', 'asesor'],
   'inventory.sell': ['admin', 'gerencia'],

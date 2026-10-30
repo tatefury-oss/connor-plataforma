@@ -15,6 +15,15 @@ export const config = {
   publicUrl: env.PUBLIC_URL || `http://localhost:${env.PORT || 3000}`,
   trustProxy: env.TRUST_PROXY === '1',
   sessionHours: Number(env.SESSION_HOURS || 12),
+  databaseSsl: env.DATABASE_SSL === '1',
+  dbPoolSize: Number(env.DB_POOL_SIZE || 10),
+  // En producción las migraciones se aplican a mano (npm run migrate) después de un respaldo.
+  autoMigrate: env.AUTO_MIGRATE ? env.AUTO_MIGRATE === '1' : env.NODE_ENV !== 'production',
+  retention: {
+    readNotificationsDays: Number(env.RETENTION_NOTIFICATIONS_DAYS || 90),
+    assistantDays: Number(env.RETENTION_ASSISTANT_DAYS || 180),
+    botRunsDays: Number(env.RETENTION_BOT_RUNS_DAYS || 365),
+  },
   uploadDir: env.UPLOAD_DIR || new URL('../uploads/', import.meta.url).pathname,
   anthropicApiKey: env.ANTHROPIC_API_KEY || '',
   whatsapp: {
@@ -25,6 +34,15 @@ export const config = {
     graphVersion: env.WHATSAPP_GRAPH_VERSION || 'v21.0',
   },
 };
+
+/** Problemas de configuración que impiden operar con seguridad en producción. */
+export function productionProblems() {
+  if (!config.isProd) return [];
+  const p = [];
+  if (!/^https:\/\//.test(config.publicUrl)) p.push('PUBLIC_URL debe usar https:// en producción.');
+  if (/localhost|127\.0\.0\.1/.test(config.databaseUrl) === false && !config.databaseSsl) p.push('Base de datos remota sin DATABASE_SSL=1.');
+  return p;
+}
 
 export const whatsappReceiveEnabled = () => Boolean(config.whatsapp.verifyToken && config.whatsapp.appSecret);
 export const whatsappSendEnabled = () => Boolean(config.whatsapp.accessToken && config.whatsapp.phoneNumberId);

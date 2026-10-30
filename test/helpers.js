@@ -41,6 +41,7 @@ export function client(base) {
     return res;
   }
   return {
+    jar,
     req,
     async login(email, password = PASSWORD) {
       const page = await req('/admin/login');

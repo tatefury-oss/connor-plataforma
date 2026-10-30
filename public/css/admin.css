@@ -164,3 +164,5 @@ a.kpi { text-decoration: none; color: inherit } a.kpi:hover { border-color: var(
 .notif-list { list-style: none; margin: 0; padding: 0 } .notif-list a { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 18px; border-bottom: 1px solid #F0EBE3; text-decoration: none; color: var(--text) }
 .notif-list a span { grid-column: 1 } .notif-list time { grid-row: 1; grid-column: 2; color: var(--muted); font-size: 12px } .notif-list li.unread a { background: #F5F8FF } .notif-list li.unread strong::before { content: '● '; color: var(--blue) }
 @media (max-width: 860px) { .chat-layout { grid-template-columns: 1fr } .cmsg { max-width: 92% } }
+.me-link { color: #fff; text-decoration: none } .me-link:hover { text-decoration: underline; color: #fff }
+details.card > summary { cursor: pointer; color: var(--ink) }

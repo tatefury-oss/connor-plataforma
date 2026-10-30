@@ -252,6 +252,13 @@ router.get('/admin/prospectos/:id', async (req, res, next) => {
       </tbody></table>` : ''}
     </section>
 
+    ${can(req.user, 'privacy.manage') ? html`<details class="card"><summary><strong>Protección de datos (derechos ARCO)</strong></summary>
+      <p class="muted">Atiende solicitudes del titular: acceso a sus datos o cancelación. Si tiene ventas o lotes, los datos se conservan por obligación legal y solo se bloquea su uso comercial.</p>
+      <div class="toolbar"><a class="btn ghost small" href="/admin/prospectos/${lead.id}/datos-personales.json">Descargar sus datos (acceso)</a></div>
+      <form class="inline" method="post" action="/admin/prospectos/${lead.id}/anonimizar" data-confirm="¿Eliminar los datos personales de este titular? No se puede deshacer.">${csrfField(req)}
+        <input name="reason" required maxlength="200" placeholder="Folio o motivo de la solicitud"><button class="btn small ghost" type="submit">Cancelar datos (eliminar)</button></form>
+    </details>` : ''}
+
     <section class="card">
       <h2>Seguimiento</h2>
       <form class="form" method="post" action="/admin/prospectos/${lead.id}/actividad">

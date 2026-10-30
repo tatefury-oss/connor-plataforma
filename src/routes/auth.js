@@ -56,6 +56,8 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
   }
 
   await query('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = now() WHERE id = $1', [user.id]);
+  // Cualquier sesión previa de este navegador se invalida antes de emitir una nueva.
+  await destroySession(req, res);
   await createSession(res, user, req);
   await audit({ req, userId: user.id, action: 'auth.login', entity: 'user', entityId: user.id });
   res.redirect(303, next);

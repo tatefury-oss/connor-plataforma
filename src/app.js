@@ -1,6 +1,8 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { config } from './config.js';
+import { query } from './db.js';
 import { cookieMiddleware } from './security/cookies.js';
 import { requireAuth } from './security/rbac.js';
 import { loadUser, requireCsrf } from './security/session.js';
@@ -10,6 +12,7 @@ import dashboardRoutes from './routes/admin/dashboard.js';
 import developmentRoutes, { mountDevelopmentUploads } from './routes/admin/developments.js';
 import assistantRoutes from './routes/admin/assistant.js';
 import chatRoutes from './routes/admin/chat.js';
+import accountRoutes from './routes/admin/account.js';
 import financeRoutes from './routes/admin/finance.js';
 import leadRoutes from './routes/admin/leads.js';
 import projectRoutes, { mountProjectUploads } from './routes/admin/projects.js';
@@ -50,6 +53,23 @@ export function createApp() {
   app.use(webhookRoutes);
 
   app.get('/healthz', (_req, res) => res.json({ ok: true }));
+  // Listo para recibir tráfico solo si la base de datos responde.
+  app.get('/readyz', async (_req, res) => {
+    try { await query('SELECT 1'); res.json({ ok: true, db: true }); } catch { res.status(503).json({ ok: false, db: false }); }
+  });
+
+  // Registro de solicitudes sin datos personales (sin cadena de consulta ni cuerpo).
+  app.use((req, res, next) => {
+    if (/^\/(css|js|assets|uploads|socket\.io)\//.test(req.path)) return next();
+    const start = process.hrtime.bigint();
+    res.on('finish', () => {
+      const ms = Number(process.hrtime.bigint() - start) / 1e6;
+      const entry = { t: new Date().toISOString(), method: req.method, path: req.path, status: res.statusCode, ms: Math.round(ms), user: req.user?.id ?? null };
+      if (config.isProd) console.log(JSON.stringify(entry));
+      else if (config.env !== 'test' && process.env.LOG_REQUESTS === '1') console.log(`${entry.method} ${entry.path} ${entry.status} ${entry.ms}ms`);
+    });
+    next();
+  });
   app.use(express.static(new URL('../public/', import.meta.url).pathname, { index: false, maxAge: config.isProd ? '7d' : 0 }));
   app.use('/uploads', express.static(config.uploadDir, { index: false, maxAge: '30d', dotfiles: 'deny' }));
 
@@ -62,6 +82,9 @@ export function createApp() {
   app.use('/admin', loadUser, (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.use(authRoutes);
   app.use('/admin', requireAuth);
+  // Límite general para operaciones de escritura del panel por IP.
+  app.use('/admin', rateLimit({ windowMs: 10 * 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false,
+    skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method), message: 'Demasiadas operaciones. Espera unos minutos.' }));
   // Contadores del menú (chat sin leer y notificaciones) para las páginas HTML del panel.
   app.use('/admin', async (req, _res, next) => {
     if (req.method === 'GET' && req.accepts(['html', 'json']) === 'html') {
@@ -79,6 +102,7 @@ export function createApp() {
   app.use(financeRoutes);
   app.use(assistantRoutes);
   app.use(chatRoutes);
+  app.use(accountRoutes);
   app.use(developmentRoutes);
   app.use(settingsRoutes);
   app.use(userRoutes);
