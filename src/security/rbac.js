@@ -24,6 +24,8 @@ const PERMISSIONS = {
   'inventory.manage': ['admin'],
   'projects.tasks': ['admin', 'gerencia'],
   'projects.documents': ['admin', 'gerencia'],
+  'assistant.use': ['admin', 'gerencia', 'asesor', 'finanzas'],
+  'analytics.view': ['admin', 'gerencia'],
   'finance.view_all': ['admin', 'gerencia', 'finanzas'],
   'finance.view_own': ['asesor'],
   'finance.manage': ['admin', 'finanzas'],

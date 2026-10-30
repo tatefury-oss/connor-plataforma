@@ -3,6 +3,8 @@ import { html } from '../html.js';
 
 const NAV = [
   ['/admin', 'Tablero', () => true],
+  ['/admin/asistente', 'Asistente IA', (u) => can(u, 'assistant.use')],
+  ['/admin/analitica', 'Analítica', (u) => can(u, 'analytics.view')],
   ['/admin/prospectos', 'Prospectos', canSeeLeads],
   ['/admin/embudo', 'Embudo', canSeeLeads],
   ['/admin/proyectos', 'Proyectos e inventario', (u) => can(u, 'inventory.view')],

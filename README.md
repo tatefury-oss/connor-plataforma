@@ -12,7 +12,7 @@ Sitio público + CRM Lite para **CONNOR Constructora del Noroeste**. Ambos entor
 | 4 | WhatsApp Business API, asistente con IA y Round Robin | ✅ Listo en código · **requiere credenciales de Meta y de Anthropic** para operar |
 | 5 | Administración de proyectos e inventario de lotes | ✅ Listo |
 | 6 | Finanzas y cartera: ventas, planes de pago, abonos, morosidad, estados de cuenta | ✅ Listo |
-| 7 | Asistente de IA, reportes y analítica avanzada | ⏳ Pendiente (el tablero ya tiene los indicadores comerciales) |
+| 7 | Asistente de IA interno, reportes y analítica | ✅ Listo en código · **requiere `ANTHROPIC_API_KEY`** para el asistente |
 | 8 | Chat interno | ⏳ Pendiente (la sincronización en tiempo real con Socket.IO ya funciona) |
 | 9 | Endurecimiento final y puesta en producción | ⏳ Pendiente |
 
@@ -74,6 +74,17 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 - **Estado de cuenta** imprimible (o guardar como PDF desde el navegador) y en CSV. **Reportes** de ingresos por periodo y de antigüedad de cartera (1-30, 31-60, 61-90 y más de 90 días), en CSV para Excel. Cada descarga queda en la auditoría.
 - **Cancelar venta:** solo el administrador, con motivo. El lote vuelve a estar disponible y los pagos se conservan en el historial; la devolución al cliente se gestiona por separado.
 
+## Asistente interno y analítica (fase 7)
+
+**Asistente IA** (`/admin/asistente`, todos los roles). Chat con Claude (`claude-opus-5-5`) para consultar información y preparar reportes en lenguaje natural:
+- *"¿Qué prospectos no tienen seguimiento y a quién llamo primero?"*, *"Resume la conversación con el prospecto #18"*, *"Prepara el reporte comercial de la semana"*, *"¿Cómo está la cartera vencida?"*, *"¿Qué tendencias ves en los últimos 6 meses?"*.
+- Trabaja **solo con lo que el usuario puede ver**: cada herramienta usa las mismas consultas con alcance por rol que el panel. Un asesor solo consulta sus prospectos y su cartera; finanzas no recibe herramientas del CRM; un asesor no ve el desempeño de otros. Aunque el modelo pidiera una herramienta no autorizada, el servidor la rechaza.
+- Herramientas: buscar prospectos, ver la ficha (incluye conversaciones de WhatsApp para resumirlas), prospectos sin seguimiento, resumen comercial por periodo, tendencias mensuales, estado de proyectos e inventario, cartera (resumen, vencida, morosos) y movimientos financieros.
+- **Única acción de escritura:** crear un recordatorio (programa el próximo contacto y deja una nota) cuando el usuario lo pide. No puede registrar ni anular pagos, cambiar saldos, precios o lotes, reasignar ni borrar; si se lo piden, indica en qué sección del panel hacerlo.
+- Las conversaciones son privadas de cada usuario. Cada consulta que usa datos queda en la auditoría (herramientas usadas) y en `assistant_runs` con los tokens consumidos. Límite de 40 consultas por hora por usuario.
+
+**Analítica** (`/admin/analitica`, gerencia y administración): prospectos, citas, ventas, conversión y tiempo de respuesta del periodo; gráficas de los últimos 12 meses (prospectos, conversiones, ventas registradas y cobranza por moneda); embudo; conversión por fuente de captación, por asesor y por desarrollo. Cada gráfica incluye su tabla de datos. El botón "Pedir análisis al asistente" abre el chat con la solicitud del periodo ya escrita.
+
 ## Roles (mínimo privilegio)
 
 | Permiso | Admin | Gerencia | Asesor | Finanzas |
@@ -89,6 +100,8 @@ Para activarlo se necesitan `ANTHROPIC_API_KEY` y el envío de WhatsApp configur
 | Ver ventas y cartera | ✔ | ✔ | Solo de sus clientes | ✔ |
 | Registrar ventas, pagos y promesas | ✔ | ✘ | ✘ | ✔ |
 | Anular pagos, cancelar ventas | ✔ | ✘ | ✘ | ✘ |
+| Asistente IA (con su alcance) | ✔ | ✔ | ✔ | ✔ |
+| Analítica | ✔ | ✔ | ✘ | ✘ |
 | Desarrollos, sitio, usuarios, auditoría | ✔ | ✘ | ✘ | ✘ |
 
 El alcance se aplica en las consultas SQL, no solo en la interfaz. Si un asesor intenta abrir un prospecto ajeno, recibe un 404.
@@ -127,7 +140,7 @@ npm test
 
 ## Pendiente de configurar o autorizar (no se simuló)
 
-1. **Asistente con IA.** Crear una clave en console.anthropic.com y ponerla en `ANTHROPIC_API_KEY`. Cada respuesta del asistente consume tokens de la cuenta de Anthropic; el consumo por conversación queda registrado en `bot_runs`.
+1. **Inteligencia artificial.** Crear una clave en console.anthropic.com y ponerla en `ANTHROPIC_API_KEY`. La usan el asistente de WhatsApp y el asistente interno. Cada respuesta consume tokens de la cuenta de Anthropic; el consumo queda registrado en `bot_runs` y `assistant_runs`.
 2. **WhatsApp Business Platform (Meta).** Crear la app en developers.facebook.com, dar de alta el número y apuntar el webhook a `https://TU-DOMINIO/webhooks/whatsapp` con el campo `messages`. Después completar `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN` (token de usuario del sistema) y `WHATSAPP_PHONE_NUMBER_ID`. Mientras falten, el webhook responde 503 y el panel ofrece "Abrir WhatsApp" en lugar de enviar.
 3. **Dominio y HTTPS.** Usar `NODE_ENV=production`, `PUBLIC_URL` y `TRUST_PROXY=1` si hay un proxy delante.
 4. **Datos de la empresa** que el diseño dejó como marcadores: año de fundación, correo, dirección de oficina, zona y precio total de Hacienda Flor de Mayo, precio total de Los Pinos y URL de Facebook. Mientras estén vacíos no se muestran (o aparecen como "Por confirmar"). Se capturan en *Sitio público* y *Desarrollos*.
@@ -141,7 +154,7 @@ migrations/      esquema SQL versionado
 src/app.js       Express, seguridad y montaje de rutas
 src/server.js    HTTP + Socket.IO (sesión autenticada)
 src/security/    contraseñas, sesiones/CSRF, roles
-src/services/    leads (Round Robin), WhatsApp, asistente IA, inventario, finanzas, auditoría, ajustes
+src/services/    leads (Round Robin), WhatsApp, asistentes IA, analítica, inventario, finanzas, auditoría, ajustes
 src/routes/      público, autenticación, webhooks y panel
 src/views/       plantillas HTML con escape automático
 public/          CSS, JS del navegador y assets del diseño
